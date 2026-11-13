@@ -544,8 +544,8 @@ final class HotKeyInterceptor {
                     return dispatch(.pinOnTop)
                 }
 
-                // Toggle browser tabs: B
-                if keycode == KeyCode.b {
+                // Toggle browser tabs filter: S
+                if keycode == KeyCode.s, FeaturePreferences.browserTabsShortcutEnabled {
                     return dispatch(.toggleBrowserTabs)
                 }
 

@@ -208,6 +208,8 @@ final class WindowItemView: NSView {
     private let imageView = NSImageView()
     private let iconView = NSImageView()
     private let titleLabel = NSTextField(labelWithString: "")
+    private let tabTitleOverlayLabel = NSTextField(wrappingLabelWithString: "")
+    private let tabDomainOverlayLabel = NSTextField(labelWithString: "")
     private let pillBar = ActionPillBar()
     private let statusBadge = NSImageView()
     private let appIcon: NSImage?
@@ -273,11 +275,32 @@ final class WindowItemView: NSView {
         pillBar.closeButton.action = #selector(closeClicked)
         addSubview(pillBar)
 
-        if info.browserTab != nil {
+        if let tab = info.browserTab {
             statusBadge.image = NSImage(systemSymbolName: "globe", accessibilityDescription: "Browser tab")
             statusBadge.imageScaling = .scaleProportionallyUpOrDown
             statusBadge.contentTintColor = NSColor.systemTeal.withAlphaComponent(0.92)
             imageContainer.addSubview(statusBadge)
+
+            if style != .iconsOnly {
+                tabTitleOverlayLabel.stringValue = info.title
+                tabTitleOverlayLabel.font = .systemFont(ofSize: 11.5, weight: .semibold)
+                tabTitleOverlayLabel.textColor = .labelColor
+                tabTitleOverlayLabel.alignment = .center
+                tabTitleOverlayLabel.maximumNumberOfLines = 2
+                tabTitleOverlayLabel.lineBreakMode = .byTruncatingTail
+                tabTitleOverlayLabel.isHidden = (style == .full)
+                imageContainer.addSubview(tabTitleOverlayLabel)
+
+                tabDomainOverlayLabel.stringValue = tab.domain
+                tabDomainOverlayLabel.font = .systemFont(ofSize: 10, weight: .regular)
+                tabDomainOverlayLabel.textColor = .secondaryLabelColor
+                tabDomainOverlayLabel.alignment = .center
+                tabDomainOverlayLabel.maximumNumberOfLines = 1
+                tabDomainOverlayLabel.lineBreakMode = .byTruncatingMiddle
+                tabDomainOverlayLabel.cell?.usesSingleLineMode = true
+                tabDomainOverlayLabel.isHidden = tab.domain.isEmpty
+                imageContainer.addSubview(tabDomainOverlayLabel)
+            }
         } else if info.isMinimized {
             statusBadge.image = NSImage(systemSymbolName: "minus.circle.fill", accessibilityDescription: "Minimized window")
             statusBadge.imageScaling = .scaleProportionallyUpOrDown
@@ -486,18 +509,65 @@ final class WindowItemView: NSView {
         )
 
         if isShowingFallbackIcon {
-            let iconDim = max(24, min(60, (min(imageContainer.bounds.width, imageContainer.bounds.height) * 0.48).rounded()))
-            imageView.frame = NSRect(
-                x: ((imageContainer.bounds.width - iconDim) / 2).rounded(),
-                y: ((imageContainer.bounds.height - iconDim) / 2).rounded(),
-                width: iconDim,
-                height: iconDim
-            )
+            if let tab = info.browserTab, style != .iconsOnly {
+                let boxW = imageContainer.bounds.width
+                let boxH = imageContainer.bounds.height
+                let padX: CGFloat = 12
+                let textW = max(20, boxW - padX * 2)
+                let iconDim = max(24, min(36, (min(boxW, boxH) * 0.28).rounded()))
+                let hasDomain = !tab.domain.isEmpty
+                let showTitle = (style == .thumbnailsOnly)
+
+                if showTitle {
+                    let topY = boxH - 18 - iconDim
+                    imageView.frame = NSRect(
+                        x: ((boxW - iconDim) / 2).rounded(),
+                        y: max(48, topY),
+                        width: iconDim,
+                        height: iconDim
+                    )
+                    let domainH: CGFloat = hasDomain ? 14 : 0
+                    let domainY: CGFloat = 10
+                    tabDomainOverlayLabel.isHidden = !hasDomain
+                    tabDomainOverlayLabel.frame = NSRect(x: padX, y: domainY, width: textW, height: domainH)
+
+                    let titleBottom = hasDomain ? (domainY + domainH + 3) : 12
+                    let titleMaxH = max(16, imageView.frame.minY - titleBottom - 4)
+                    tabTitleOverlayLabel.isHidden = false
+                    tabTitleOverlayLabel.frame = NSRect(x: padX, y: titleBottom, width: textW, height: min(32, titleMaxH))
+                } else {
+                    imageView.frame = NSRect(
+                        x: ((boxW - iconDim) / 2).rounded(),
+                        y: ((boxH - iconDim) / 2 + (hasDomain ? 8 : 0)).rounded(),
+                        width: iconDim,
+                        height: iconDim
+                    )
+                    tabTitleOverlayLabel.isHidden = true
+                    tabDomainOverlayLabel.isHidden = !hasDomain
+                    tabDomainOverlayLabel.frame = NSRect(
+                        x: padX,
+                        y: max(8, imageView.frame.minY - 18),
+                        width: textW,
+                        height: 14
+                    )
+                }
+            } else {
+                let iconDim = max(24, min(60, (min(imageContainer.bounds.width, imageContainer.bounds.height) * 0.48).rounded()))
+                imageView.frame = NSRect(
+                    x: ((imageContainer.bounds.width - iconDim) / 2).rounded(),
+                    y: ((imageContainer.bounds.height - iconDim) / 2).rounded(),
+                    width: iconDim,
+                    height: iconDim
+                )
+            }
         } else {
             imageView.frame = imageContainer.bounds
+            tabTitleOverlayLabel.isHidden = true
+            tabDomainOverlayLabel.isHidden = true
         }
 
         if style == .thumbnailsOnly {
+            iconView.isHidden = (isShowingFallbackIcon && info.browserTab != nil)
             let badgeDim = max(16, min(24, (min(innerW, thumbH) * 0.20).rounded()))
             iconView.frame = NSRect(x: 7, y: 7, width: badgeDim, height: badgeDim)
         }

@@ -158,8 +158,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func toggleIncludeBrowserTabs() {
-        let current = UserDefaults.standard.bool(forKey: "TabStation.includeBrowserTabs")
-        UserDefaults.standard.set(!current, forKey: "TabStation.includeBrowserTabs")
+        FeaturePreferences.includeBrowserTabsByDefault.toggle()
+        WindowListCache.shared.invalidateAndPrewarm()
     }
 
     @objc private func toggleLaunchAtLogin() {
@@ -301,12 +301,12 @@ extension AppDelegate: NSMenuDelegate {
         menu.addItem(minItem)
 
         let includeTabsItem = NSMenuItem(
-            title: "Include Browser Tabs",
+            title: "Show Browser Tabs in Main List",
             action: #selector(toggleIncludeBrowserTabs),
             keyEquivalent: ""
         )
         includeTabsItem.target = self
-        includeTabsItem.state = UserDefaults.standard.bool(forKey: "TabStation.includeBrowserTabs") ? .on : .off
+        includeTabsItem.state = FeaturePreferences.includeBrowserTabsByDefault ? .on : .off
         menu.addItem(includeTabsItem)
 
         let loginItem = NSMenuItem(

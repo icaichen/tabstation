@@ -318,6 +318,8 @@ enum FeaturePreferences {
         static let hoverActionPills = "TabStation.hoverActionPills"
         static let pinShortcut = "TabStation.pinShortcut"
         static let displayMoveShortcut = "TabStation.displayMoveShortcut"
+        static let browserTabsShortcut = "TabStation.browserTabsShortcut"
+        static let includeBrowserTabs = "TabStation.includeBrowserTabs"
     }
 
     static var arrowKeySnappingEnabled: Bool {
@@ -360,13 +362,31 @@ enum FeaturePreferences {
         }
     }
 
+    static var browserTabsShortcutEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: Keys.browserTabsShortcut) as? Bool ?? true }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Keys.browserTabsShortcut)
+            postChange()
+        }
+    }
+
+    static var includeBrowserTabsByDefault: Bool {
+        get { UserDefaults.standard.object(forKey: Keys.includeBrowserTabs) as? Bool ?? false }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Keys.includeBrowserTabs)
+            postChange()
+        }
+    }
+
     static func resetDefaults() {
         for key in [
             Keys.arrowKeySnapping,
             Keys.spaceQuickLook,
             Keys.hoverActionPills,
             Keys.pinShortcut,
-            Keys.displayMoveShortcut
+            Keys.displayMoveShortcut,
+            Keys.browserTabsShortcut,
+            Keys.includeBrowserTabs
         ] {
             UserDefaults.standard.removeObject(forKey: key)
         }

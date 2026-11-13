@@ -89,6 +89,18 @@ final class WindowListCache: @unchecked Sendable {
         periodicTimer = timer
     }
 
+    func cachedBrowserTabsSnapshot() -> [WindowInfo] {
+        lock.lock()
+        defer { lock.unlock() }
+        return cachedBrowserTabs
+    }
+
+    func updateCachedBrowserTabs(_ tabs: [WindowInfo]) {
+        lock.lock()
+        cachedBrowserTabs = tabs
+        lock.unlock()
+    }
+
     func invalidateAndPrewarm() {
         DispatchQueue.global(qos: .utility).async { [weak self] in
             self?.refreshInBackground()
@@ -160,7 +172,7 @@ final class WindowListCache: @unchecked Sendable {
         }
 
         var browserTabs = existingTabs
-        if UserDefaults.standard.bool(forKey: "TabStation.includeBrowserTabs") {
+        if FeaturePreferences.includeBrowserTabsByDefault {
             if runSlowIPC || browserTabs.isEmpty {
                 browserTabs = BrowserTabService.shared.fetchTabs()
             }
@@ -337,7 +349,7 @@ enum WindowEnumerator {
             frontToBack.append(contentsOf: filteredMin)
         }
 
-        if UserDefaults.standard.bool(forKey: "TabStation.includeBrowserTabs") && !cachedBrowserTabs.isEmpty {
+        if FeaturePreferences.includeBrowserTabsByDefault && !cachedBrowserTabs.isEmpty {
             frontToBack.append(contentsOf: cachedBrowserTabs)
         }
 

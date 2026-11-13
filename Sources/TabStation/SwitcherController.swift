@@ -10,6 +10,7 @@ final class SwitcherController {
 
     private var allWindows: [WindowInfo] = []
     private var visibleWindows: [WindowInfo] = []
+    private var transientBrowserTabs: [WindowInfo] = []
     private var selectedIndex = 0
     private var appFilterEnabled = false
     private var browserFilterEnabled = false
@@ -241,6 +242,7 @@ final class SwitcherController {
         guard buildWindowList(), !allWindows.isEmpty else { return }
         appFilterEnabled = false
         browserFilterEnabled = false
+        transientBrowserTabs = []
         applyFilter()
         let index = offset < 0 ? max(0, visibleWindows.count - 1) : min(offset, visibleWindows.count - 1)
         show(initialSelection: index, role: .primary)
@@ -268,6 +270,7 @@ final class SwitcherController {
         // Strictly show only the active app's windows. NEVER show all windows.
         appFilterEnabled = true
         browserFilterEnabled = false
+        transientBrowserTabs = []
         visibleWindows = appWindows
         let initial = appWindows.count > 1 ? 1 : 0
         show(initialSelection: initial, role: role)
@@ -297,7 +300,8 @@ final class SwitcherController {
 
     private func applyFilter() {
         if browserFilterEnabled {
-            let tabs = allWindows.filter { $0.browserTab != nil }
+            let indexed = allWindows.filter { $0.browserTab != nil }
+            let tabs = transientBrowserTabs.isEmpty ? indexed : transientBrowserTabs
             visibleWindows = tabs.isEmpty ? allWindows : tabs
         } else if appFilterEnabled && frontAppPID != 0 {
             let frontBundleID = NSRunningApplication(processIdentifier: frontAppPID)?.bundleIdentifier
@@ -387,6 +391,9 @@ final class SwitcherController {
         }
         if FeaturePreferences.displayMoveShortcutEnabled {
             list.append("D display")
+        }
+        if FeaturePreferences.browserTabsShortcutEnabled {
+            list.append("S tabs")
         }
         list.append("W close")
         return list
@@ -643,6 +650,7 @@ final class SwitcherController {
         isVisible = false
         appFilterEnabled = false
         browserFilterEnabled = false
+        transientBrowserTabs = []
 
         if instant || DisplayStyle.current == .iconsOnly {
             CATransaction.begin()
@@ -710,20 +718,65 @@ final class SwitcherController {
     }
 
     private func toggleBrowserTabsFilter() {
-        browserFilterEnabled.toggle()
-        applyFilter()
-        guard !visibleWindows.isEmpty else {
+        guard FeaturePreferences.browserTabsShortcutEnabled else { return }
+
+        if browserFilterEnabled {
             browserFilterEnabled = false
+            transientBrowserTabs = []
             applyFilter()
-            showTransientNotice("No browser tabs found")
+            let screen = screenUnderCursor()
+            configureView(on: screen)
+            layoutPanel(on: screen)
+            selectedIndex = min(selectedIndex, max(0, visibleWindows.count - 1))
+            view.setSelection(selectedIndex, animated: false)
+            showTransientNotice("Showing all windows")
             return
         }
-        let screen = screenUnderCursor()
-        configureView(on: screen)
-        layoutPanel(on: screen)
-        selectedIndex = min(selectedIndex, visibleWindows.count - 1)
-        view.setSelection(selectedIndex, animated: false)
-        showTransientNotice(browserFilterEnabled ? "Filtered to Browser Tabs" : "Showing all windows")
+
+        browserFilterEnabled = true
+        let existingTabs = allWindows.filter { $0.browserTab != nil }
+        let cached = existingTabs.isEmpty ? WindowListCache.shared.cachedBrowserTabsSnapshot() : existingTabs
+        if !cached.isEmpty {
+            transientBrowserTabs = cached
+            applyFilter()
+            let screen = screenUnderCursor()
+            configureView(on: screen)
+            layoutPanel(on: screen)
+            selectedIndex = 0
+            view.setSelection(0, animated: false)
+            showTransientNotice("Browser Tabs (\(cached.count)) — S to exit")
+        } else {
+            showTransientNotice("Loading browser tabs…")
+        }
+
+        let currentGen = generation
+        DispatchQueue.global(qos: .userInteractive).async { [weak self] in
+            let freshTabs = BrowserTabService.shared.fetchTabs()
+            WindowListCache.shared.updateCachedBrowserTabs(freshTabs)
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.isVisible, self.browserFilterEnabled, self.generation == currentGen else { return }
+                guard !freshTabs.isEmpty else {
+                    self.browserFilterEnabled = false
+                    self.transientBrowserTabs = []
+                    self.applyFilter()
+                    let screen = self.screenUnderCursor()
+                    self.configureView(on: screen)
+                    self.layoutPanel(on: screen)
+                    self.selectedIndex = min(self.selectedIndex, max(0, self.visibleWindows.count - 1))
+                    self.view.setSelection(self.selectedIndex, animated: false)
+                    self.showTransientNotice("No open browser tabs found")
+                    return
+                }
+                self.transientBrowserTabs = freshTabs
+                self.applyFilter()
+                let screen = self.screenUnderCursor()
+                self.configureView(on: screen)
+                self.layoutPanel(on: screen)
+                self.selectedIndex = min(self.selectedIndex, max(0, freshTabs.count - 1))
+                self.view.setSelection(self.selectedIndex, animated: false)
+                self.showTransientNotice("Browser Tabs (\(freshTabs.count)) — S to exit")
+            }
+        }
     }
 
     private func showTransientNotice(_ text: String) {
@@ -772,12 +825,18 @@ final class SwitcherController {
         generation += 1
         let gen = generation
         let metrics = view.thumbnailMetrics
-        let targets = visibleWindows.map { window in
+        var targets: [(id: CGWindowID, size: CGSize)] = []
+        for window in visibleWindows {
+            if window.browserTab != nil {
+                view.applyThumbnail(nil, toWindowID: window.id)
+                continue
+            }
             let width = min(metrics.maxWidth, max(metrics.minWidth, (metrics.height * window.aspectRatio).rounded()))
             // 2x so thumbnails stay crisp on Retina displays.
             let size = CGSize(width: width * 2, height: metrics.height * 2)
-            return (id: window.id, size: size)
+            targets.append((id: window.id, size: size))
         }
+        guard !targets.isEmpty else { return }
 
         Task { [weak self] in
             guard let self else { return }

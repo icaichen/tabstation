@@ -252,6 +252,7 @@ final class PreferencesWindowController: NSWindowController {
     private let hoverActionPillsSwitch = NSSwitch()
     private let displayMoveShortcutSwitch = NSSwitch()
     private let pinShortcutSwitch = NSSwitch()
+    private let browserTabsShortcutSwitch = NSSwitch()
     private let includeBrowserTabsSwitch = NSSwitch()
 
     // General controls
@@ -536,8 +537,14 @@ final class PreferencesWindowController: NSWindowController {
 
         let browserCard = makeSectionCard(title: "Browser & App Sources", rows: [
             makeSwitchRow(
-                title: "Index Open Browser Tabs",
-                subtitle: "Show open tabs from Chrome, Safari, Arc, Edge, and Brave directly alongside windows.",
+                title: "Browser Tab Filter Shortcut (S)",
+                subtitle: "Press S in the switcher to jump to open tabs from Chrome, Safari, Arc, Edge, and Brave.",
+                toggle: browserTabsShortcutSwitch,
+                action: #selector(toggleBrowserTabsShortcut)
+            ),
+            makeSwitchRow(
+                title: "Show Browser Tabs in Main List by Default",
+                subtitle: "Always mix open browser tabs into the main switcher strip instead of only showing them on S.",
                 toggle: includeBrowserTabsSwitch,
                 action: #selector(toggleIncludeBrowserTabs)
             ),
@@ -814,7 +821,7 @@ final class PreferencesWindowController: NSWindowController {
         let allSpaces = UserDefaults.standard.object(forKey: "TabStation.showAllSpaces") as? Bool ?? true
         showAllSpacesSwitch.state = allSpaces ? .on : .off
         showMinimizedSwitch.state = UserDefaults.standard.bool(forKey: "TabStation.showMinimized") ? .on : .off
-        includeBrowserTabsSwitch.state = UserDefaults.standard.bool(forKey: "TabStation.includeBrowserTabs") ? .on : .off
+        includeBrowserTabsSwitch.state = FeaturePreferences.includeBrowserTabsByDefault ? .on : .off
         launchAtLoginSwitch.state = LaunchAtLogin.isEnabled ? .on : .off
 
         arrowKeySnappingSwitch.state = FeaturePreferences.arrowKeySnappingEnabled ? .on : .off
@@ -823,6 +830,7 @@ final class PreferencesWindowController: NSWindowController {
         hoverActionPillsSwitch.state = FeaturePreferences.hoverActionPillsEnabled ? .on : .off
         displayMoveShortcutSwitch.state = FeaturePreferences.displayMoveShortcutEnabled ? .on : .off
         pinShortcutSwitch.state = FeaturePreferences.pinShortcutEnabled ? .on : .off
+        browserTabsShortcutSwitch.state = FeaturePreferences.browserTabsShortcutEnabled ? .on : .off
 
         switch DisplayStyle.current {
         case .full: displayStyleControl.selectedSegment = 0
@@ -998,8 +1006,14 @@ final class PreferencesWindowController: NSWindowController {
         onGeneralChange?()
     }
 
+    @objc private func toggleBrowserTabsShortcut(_ sender: NSSwitch) {
+        FeaturePreferences.browserTabsShortcutEnabled = sender.state == .on
+        onAppearanceChange?()
+    }
+
     @objc private func toggleIncludeBrowserTabs(_ sender: NSSwitch) {
-        UserDefaults.standard.set(sender.state == .on, forKey: "TabStation.includeBrowserTabs")
+        FeaturePreferences.includeBrowserTabsByDefault = sender.state == .on
+        WindowListCache.shared.invalidateAndPrewarm()
         onGeneralChange?()
     }
 
@@ -1026,7 +1040,6 @@ final class PreferencesWindowController: NSWindowController {
         GeneralPreferences.resetDefaults()
         UserDefaults.standard.set(true, forKey: "TabStation.showAllSpaces")
         UserDefaults.standard.set(false, forKey: "TabStation.showMinimized")
-        UserDefaults.standard.set(false, forKey: "TabStation.includeBrowserTabs")
         LaunchAtLogin.setEnabled(false)
         DisplayStyle.current = .thumbnailsOnly
         ThumbnailSize.current = .medium
