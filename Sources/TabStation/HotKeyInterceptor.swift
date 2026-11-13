@@ -493,21 +493,30 @@ final class HotKeyInterceptor {
                 if keycode == KeyCode.returnKey {
                     return dispatch(.commit)
                 }
-                // Visual Grid Window Snapping via Arrow keys & C
-                if keycode == KeyCode.leftArrow {
-                    return dispatch(.snapLeft)
-                }
-                if keycode == KeyCode.rightArrow {
-                    return dispatch(.snapRight)
-                }
-                if keycode == KeyCode.upArrow {
-                    return dispatch(.snapUp)
-                }
-                if keycode == KeyCode.downArrow {
-                    return dispatch(.snapDown)
-                }
-                if keycode == KeyCode.c {
-                    return dispatch(.snapCenter)
+                // Arrow keys: either window snapping (if enabled) or natural selection rotation
+                if FeaturePreferences.arrowKeySnappingEnabled {
+                    if keycode == KeyCode.leftArrow {
+                        return dispatch(.snapLeft)
+                    }
+                    if keycode == KeyCode.rightArrow {
+                        return dispatch(.snapRight)
+                    }
+                    if keycode == KeyCode.upArrow {
+                        return dispatch(.snapUp)
+                    }
+                    if keycode == KeyCode.downArrow {
+                        return dispatch(.snapDown)
+                    }
+                    if keycode == KeyCode.c {
+                        return dispatch(.snapCenter)
+                    }
+                } else {
+                    if keycode == KeyCode.leftArrow || keycode == KeyCode.upArrow {
+                        return dispatch(activeRole == .sameApp ? .sameAppPrevious : .previous)
+                    }
+                    if keycode == KeyCode.rightArrow || keycode == KeyCode.downArrow {
+                        return dispatch(activeRole == .sameApp ? .sameAppNext : .next)
+                    }
                 }
 
                 // Window action: Close (W or Delete)
@@ -521,17 +530,17 @@ final class HotKeyInterceptor {
                 }
 
                 // Quick Look: Spacebar
-                if keycode == KeyCode.space {
+                if keycode == KeyCode.space, FeaturePreferences.spaceQuickLookEnabled {
                     return dispatch(.quickLook)
                 }
 
                 // Move to next display: D
-                if keycode == KeyCode.d {
+                if keycode == KeyCode.d, FeaturePreferences.displayMoveShortcutEnabled {
                     return dispatch(.moveToNextDisplay)
                 }
 
                 // Pin on top / Float PiP: P
-                if keycode == KeyCode.p {
+                if keycode == KeyCode.p, FeaturePreferences.pinShortcutEnabled {
                     return dispatch(.pinOnTop)
                 }
 

@@ -1,23 +1,11 @@
 import AppKit
 
-private extension NSColor {
-    func resolvedCGColor(for appearance: NSAppearance) -> CGColor {
-        var resolved: CGColor = cgColor
-        appearance.performAsCurrentDrawingAppearance {
-            resolved = self.cgColor
-        }
-        return resolved
-    }
-}
-
 /// Apple-minimalist floating window preview triggered naturally when resting on a switcher icon
 /// while holding the modifier key. Dynamically sizes from real window aspect ratio and anchors
 /// cleanly above or below the switcher capsule without overlapping it.
 final class QuickLookPanel: NSPanel {
 
-    private let backgroundContainer = NSView()
-    private let visualEffect = NSVisualEffectView()
-    private let tintOverlay = NSView()
+    private let surfaceView = GlassSurfaceView(cornerRadius: 16)
 
     private let headerIconView = NSImageView()
     private let headerTitleLabel: NSTextField = {
@@ -83,24 +71,13 @@ final class QuickLookPanel: NSPanel {
         root.wantsLayer = true
         contentView = root
 
-        backgroundContainer.wantsLayer = true
-        backgroundContainer.layer?.cornerRadius = 16
-        backgroundContainer.layer?.cornerCurve = .continuous
-        backgroundContainer.layer?.masksToBounds = true
-        backgroundContainer.layer?.borderWidth = Theme.panelBorderWidth
-        root.addSubview(backgroundContainer)
-
-        visualEffect.material = .popover
-        visualEffect.blendingMode = .behindWindow
-        visualEffect.state = .active
-        backgroundContainer.addSubview(visualEffect)
-
-        tintOverlay.wantsLayer = true
-        backgroundContainer.addSubview(tintOverlay)
+        surfaceView.autoresizingMask = [.width, .height]
+        root.addSubview(surfaceView)
+        let host = surfaceView.contentContainer
 
         headerIconView.imageScaling = .scaleProportionallyUpOrDown
-        root.addSubview(headerIconView)
-        root.addSubview(headerTitleLabel)
+        host.addSubview(headerIconView)
+        host.addSubview(headerTitleLabel)
 
         imageView.wantsLayer = true
         imageView.layer?.cornerRadius = 10
@@ -108,34 +85,19 @@ final class QuickLookPanel: NSPanel {
         imageView.layer?.masksToBounds = true
         imageView.imageScaling = .scaleProportionallyUpOrDown
         imageView.imageAlignment = .alignCenter
-        root.addSubview(imageView)
+        host.addSubview(imageView)
 
         fallbackContainer.isHidden = true
         fallbackIconView.imageScaling = .scaleProportionallyUpOrDown
         fallbackContainer.addSubview(fallbackIconView)
         fallbackContainer.addSubview(fallbackTitleLabel)
         fallbackContainer.addSubview(fallbackSubtitleLabel)
-        root.addSubview(fallbackContainer)
+        host.addSubview(fallbackContainer)
     }
 
     func applyAppearancePreferences() {
         appearance = AppearancePreferences.theme.nsAppearance
-        let effective = contentView?.effectiveAppearance ?? NSAppearance.currentDrawing()
-        backgroundContainer.layer?.borderColor = Theme.panelBorder.resolvedCGColor(for: effective)
-        tintOverlay.layer?.backgroundColor = Theme.panelBackingColor(for: effective).cgColor
-
-        switch AppearancePreferences.backgroundStyle {
-        case .frosted:
-            visualEffect.isHidden = false
-            visualEffect.material = .popover
-            visualEffect.alphaValue = max(0.35, CGFloat(AppearancePreferences.panelOpacity))
-        case .clear:
-            visualEffect.isHidden = false
-            visualEffect.material = .hudWindow
-            visualEffect.alphaValue = max(0.10, CGFloat(AppearancePreferences.panelOpacity) * 0.35)
-        case .tinted:
-            visualEffect.isHidden = true
-        }
+        surfaceView.applyAppearance()
     }
 
     // MARK: - Pre-warming & Presentation
@@ -448,9 +410,8 @@ final class QuickLookPanel: NSPanel {
     private func layoutInternalSubviews(for size: NSSize, isFallback: Bool) {
         let bounds = NSRect(origin: .zero, size: size)
         contentView?.frame = bounds
-        backgroundContainer.frame = bounds
-        visualEffect.frame = backgroundContainer.bounds
-        tintOverlay.frame = backgroundContainer.bounds
+        surfaceView.frame = bounds
+        surfaceView.layoutSubtreeIfNeeded()
 
         if isFallback {
             fallbackContainer.frame = bounds

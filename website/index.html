@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TabStation — Next-Gen macOS Window Switcher &amp; Workspace Manager</title>
-  <meta name="description" content="TabStation is a high-performance native macOS window switcher built in pure Swift &amp; AppKit. Live ScreenCaptureKit 60fps Retina thumbnails, browser tab switching, interactive Picture-in-Picture, and keyboard window tiling.">
-  <meta name="keywords" content="macOS window switcher, AltTab alternative mac, Command Tab replacement, ScreenCaptureKit, mac window manager, picture in picture mac, switch browser tabs mac, swift appkit macos, native mac switcher">
-  <meta name="author" content="TabStation">
+  <title>TabStation — Native macOS Window Switcher &amp; Workspace Manager</title>
+  <meta name="description" content="TabStation v1.0 is a fast, minimalist native macOS window switcher built in pure Swift &amp; AppKit. Native Liquid Glass, Hold-to-Preview, browser tab jumping, interactive Picture-in-Picture, and modular window tiling.">
+  <meta name="keywords" content="macOS window switcher, AltTab alternative mac, Command Tab replacement, ScreenCaptureKit, Liquid Glass NSGlassEffectView, mac window manager, picture in picture mac, switch browser tabs mac, swift appkit macos">
+  <meta name="author" content="icaichen">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#050508">
   <link rel="canonical" href="https://tabstation.app/">
@@ -16,19 +16,19 @@
   <link rel="apple-touch-icon" href="assets/app-icon.png">
 
   <!-- OpenGraph -->
-  <meta property="og:title" content="TabStation — The Window Switcher macOS Was Destined to Have">
-  <meta property="og:description" content="Pure Swift + AppKit. Live Retina thumbnails, direct browser tab jumping, interactive Picture-in-Picture with mouse forwarding, and keyboard window tiling.">
+  <meta property="og:title" content="TabStation v1.0 — The Window Switcher macOS Was Destined to Have">
+  <meta property="og:description" content="Pure Swift + AppKit. Native Liquid Glass, Hold-to-Preview on pause, browser tab jumping, interactive PiP, and customizable window tiling.">
   <meta property="og:image" content="https://tabstation.app/assets/switcher.png">
   <meta property="og:url" content="https://tabstation.app/">
   <meta property="og:type" content="website">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="TabStation — Native macOS Window Switcher">
-  <meta name="twitter:description" content="ScreenCaptureKit 60fps live thumbnails, browser tab navigation, interactive floating PiP, and instant window tiling for macOS Sonoma &amp; Sequoia.">
+  <meta name="twitter:title" content="TabStation v1.0 — Native macOS Window Switcher">
+  <meta name="twitter:description" content="Native Liquid Glass, Hold-to-Preview, browser tab navigation, floating PiP, and instant keyboard tiling for macOS.">
   <meta name="twitter:image" content="https://tabstation.app/assets/switcher.png">
 
-  <!-- Schema.org JSON-LD Structured Data for High-Ranking Rich Snippets -->
+  <!-- Schema.org JSON-LD Structured Data -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -36,6 +36,7 @@
       {
         "@type": "SoftwareApplication",
         "name": "TabStation",
+        "softwareVersion": "1.0.0",
         "operatingSystem": "macOS 14.0 or later",
         "applicationCategory": "ProductivityApplication",
         "offers": [
@@ -47,12 +48,7 @@
             "description": "Entirely free and open source forever under the MIT License with zero locked features, zero paywalls, and zero telemetry."
           }
         ],
-        "aggregateRating": {
-          "@type": "AggregateRating",
-          "ratingValue": "4.95",
-          "ratingCount": "248"
-        },
-        "description": "Native macOS window switcher built with Swift and AppKit. Live ScreenCaptureKit Retina thumbnails, browser tab switching, interactive Picture-in-Picture, and keyboard window tiling. 100% Free & Open Source under MIT."
+        "description": "Native macOS window switcher built with Swift and AppKit. Native Liquid Glass, Hold-to-Preview, browser tab switching, interactive Picture-in-Picture, and toggleable window tiling. 100% Free & Open Source under MIT."
       },
       {
         "@type": "FAQPage",
@@ -62,7 +58,7 @@
             "name": "How does TabStation differ from AltTab for macOS?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "While AltTab is a respected utility, TabStation provides next-generation capabilities that no other switcher offers: deep browser tab traversal across Chrome, Safari, Edge, and Arc; floating interactive Picture-in-Picture with real Quartz mouse click and scroll forwarding; instant Spacebar Quick Look; integrated multi-ratio keyboard window tiling; and a modern ScreenCaptureKit 60fps rendering engine built in pure Swift."
+              "text": "Built from scratch in pure Swift and AppKit, TabStation brings macOS 26+ native Liquid Glass (NSGlassEffectView), natural Hold-to-Preview when pausing on an icon, deep browser tab switching across Chrome, Safari, Edge, Arc, and Brave, floating Picture-in-Picture, and modular keyboard window tiling you can toggle independently."
             }
           },
           {
@@ -70,7 +66,7 @@
             "name": "Is TabStation completely free and open source?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes! TabStation is 100% free and open source under the MIT License. Every superpower—browser tab navigation, interactive Picture-in-Picture, Spacebar Quick Look, and window tiling—is completely unlocked for everyone forever with zero paywalls and zero subscriptions."
+              "text": "Yes! TabStation v1.0 is 100% free and open source under the MIT License. Every feature is unlocked out of the box with zero paywalls and zero subscriptions."
             }
           },
           {
@@ -78,7 +74,7 @@
             "name": "Why does TabStation require Accessibility and Screen Recording permissions?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Accessibility allows TabStation to intercept your custom trigger modifier via a low-level CGEventTap and accurately raise specific windows using AXUIElement. Screen Recording permission enables macOS ScreenCaptureKit to generate crystal-clear, hardware-accelerated Retina thumbnails of open windows."
+              "text": "Accessibility allows TabStation to observe your custom trigger modifier via CGEventTap and accurately raise specific windows using AXUIElement. Screen Recording enables on-demand ScreenCaptureKit Retina thumbnails and live Hold-to-Preview inspection."
             }
           },
           {
@@ -86,7 +82,7 @@
             "name": "Does TabStation phone home or collect telemetry?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Zero telemetry. TabStation opens zero network sockets, contains zero third-party analytics libraries, and runs completely offline on your Mac. 100% of your data stays on your machine."
+              "text": "Zero telemetry and zero analytics. TabStation never tracks usage, never phones home, and performs window switching and capture strictly locally on your Mac."
             }
           }
         ]
@@ -107,7 +103,7 @@
       <a href="#" class="nav-brand">
         <img src="assets/app-icon.png" alt="TabStation Logo">
         <span>TabStation</span>
-        <span class="nav-badge">v1.2 Open Source</span>
+        <span class="nav-badge">v1.0 Open Source</span>
       </a>
 
       <nav>
@@ -147,7 +143,7 @@
       <div class="eyebrow">
         <span>✦ Pure Swift + AppKit</span>
         <span>•</span>
-        <span>Zero Electron</span>
+        <span>Native Liquid Glass</span>
         <span>•</span>
         <span>Free &amp; Open Source (MIT)</span>
       </div>
@@ -157,7 +153,7 @@
       </h1>
 
       <p class="subhead">
-        Apple’s ⌘Tab was conceived in 1984 for whole applications. Today, our real work spans dozens of windows, tabs, and displays. TabStation brings live Retina thumbnails, direct browser tab jumping, hold-to-preview, and keyboard tiling into one seamless, tactile breath.
+        Apple’s ⌘Tab was conceived in 1984 for whole applications. Today, our real work spans dozens of windows, tabs, and displays. TabStation brings native Liquid Glass aesthetics, sub-millisecond responsiveness, natural hold-to-preview, browser tab jumping, and modular window tiling into one clean, tactile gesture.
       </p>
 
       <div class="hero-cta-group">
@@ -165,7 +161,7 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
             <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
           </svg>
-          <span>View on GitHub (Open Source)</span>
+          <span>View on GitHub (v1.0)</span>
         </a>
 
         <a href="#interactive-sandbox" class="btn-secondary">
@@ -179,8 +175,8 @@
       <div>
         <div class="hero-terminal-pill">
           <span>$</span>
-          <span class="terminal-cmd">git clone https://github.com/icaichen/tabstation.git &amp;&amp; cd tabstation &amp;&amp; ./build-app.sh</span>
-          <button class="copy-btn" data-copy="git clone https://github.com/icaichen/tabstation.git &amp;&amp; cd tabstation &amp;&amp; ./build-app.sh" title="Copy command">
+          <span class="terminal-cmd">git clone https://github.com/icaichen/tabstation.git &amp;&amp; cd tabstation &amp;&amp; ./build-app.sh release</span>
+          <button class="copy-btn" data-copy="git clone https://github.com/icaichen/tabstation.git &amp;&amp; cd tabstation &amp;&amp; ./build-app.sh release" title="Copy command">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -190,9 +186,9 @@
       </div>
 
       <div class="hero-subspecs">
-        <span>macOS 14.0 Sonoma &amp; 15.0+ Sequoia</span>
+        <span>macOS 14+ (Native Liquid Glass on macOS 26+)</span>
         <span>•</span>
-        <span>Universal Binary (Apple Silicon M-Series &amp; Intel)</span>
+        <span>Apple Silicon &amp; SwiftPM Open Source</span>
       </div>
     </div>
 
@@ -210,7 +206,7 @@
           <div class="stage-title">TabStation HUD — Active Option+Tab Strip</div>
           <div class="stage-status-badge">
             <span class="stage-status-dot"></span>
-            <span>ScreenCaptureKit 60fps</span>
+            <span>Liquid Glass • ScreenCaptureKit</span>
           </div>
         </div>
 
@@ -304,13 +300,13 @@
           </div>
         </div>
 
-        <!-- Card 2: Interactive PiP with Event Forwarding (Span 4) -->
+        <!-- Card 2: Live SCStream PiP + Ghost Mode (Span 4) -->
         <div class="bento-card bento-span-4">
           <div>
-            <div class="bento-tag">World First</div>
-            <h3 class="bento-title">Floating PiP + Quartz Event Forwarding</h3>
+            <div class="bento-tag">On-Demand SCStream</div>
+            <h3 class="bento-title">Live Floating PiP + Ghost Mode</h3>
             <p class="bento-desc">
-              Press <span class="key-badge">P</span> to float any window on top. Not just a static preview: our custom Quartz event tap forwards real clicks and scroll events straight to the background app!
+              Press <span class="key-badge">P</span> to pin any window in an on-demand <code>SCStream</code> live mirror. Watch builds or videos while Ghost Mode lets mouse clicks pass straight through.
             </p>
           </div>
 
@@ -335,46 +331,46 @@
                 </div>
                 <div class="pip-hud-preview">
                   <div class="pip-ripple-indicator"></div>
-                  <span>Click-Forwarding Active</span>
+                  <span>Live SCStream Mirror</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Card 3: Spacebar Quick Look (Span 4) -->
+        <!-- Card 3: Natural Hold-to-Preview & Quick Look (Span 4) -->
         <div class="bento-card bento-span-4">
           <div>
-            <div class="bento-tag">Instant Clarity</div>
-            <h3 class="bento-title">Spacebar Quick Look</h3>
+            <div class="bento-tag">Minimalist by Default</div>
+            <h3 class="bento-title">Hold-to-Preview &amp; Quick Look</h3>
             <p class="bento-desc">
-              Why squint at small thumbnails? Tap <span class="key-badge">Space</span> at any moment during switching. An enlarged, crystal-clear HUD panel appears instantly without committing focus.
+              Stay fast in Apple-minimalist <strong>Icons Only</strong> mode with zero clutter. Pause briefly (~0.36s) on any selected icon while holding <span class="key-badge">⌘</span>/<span class="key-badge">⌥</span> and a crisp, native-aspect Retina preview floats above the bar—vanishing the instant you resume switching, or lock it with <span class="key-badge">Space</span>.
             </p>
           </div>
 
           <div class="bento-visual">
             <div class="quicklook-preview-box">
               <div class="quicklook-header">
-                <strong style="color: #fff;">Quick Look HUD</strong>
-                <span class="quicklook-badge">Spacebar</span>
+                <strong style="color: #fff;">Hold-to-Preview HUD</strong>
+                <span class="quicklook-badge">Pause 0.36s · Space</span>
               </div>
               <div class="quicklook-body">
-                class SwitcherController: NSViewController {<br>
-                &nbsp;&nbsp;let panel = SwitcherPanel()<br>
-                &nbsp;&nbsp;var isVisible: Bool = true<br>
+                class SwitcherController {<br>
+                &nbsp;&nbsp;let glass = NSGlassEffectView()<br>
+                &nbsp;&nbsp;// Zero letterboxing, native aspect<br>
                 }
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Card 4: Built-in Keyboard Window Tiling (Span 4) -->
+        <!-- Card 4: Modular Window Tiling (Span 4) -->
         <div class="bento-card bento-span-4">
           <div>
-            <div class="bento-tag">Zero Additional Utilities</div>
-            <h3 class="bento-title">Zero-Friction Grid Tiling</h3>
+            <div class="bento-tag">Modular Control</div>
+            <h3 class="bento-title">Toggleable Arrow-Key Tiling</h3>
             <p class="bento-desc">
-              Stop reaching for Rectangle, Magnet, or Raycast just to arrange windows. Tap <span class="key-badge">←</span> or <span class="key-badge">→</span> to snap halves. Tap again to cycle 1/3 and 2/3 ratios.
+              Tap <span class="key-badge">←</span> / <span class="key-badge">→</span> to cycle 1/2, 1/3, and 2/3 screen splits, <span class="key-badge">↑</span>/<span class="key-badge">↓</span> to maximize/restore, or <span class="key-badge">C</span> to center. Prefer pure arrow navigation? Flip it off in <strong>Settings → Features</strong> so <span class="key-badge">←</span>/<span class="key-badge">→</span> rotate icons instead.
             </p>
           </div>
 
@@ -387,7 +383,7 @@
               <div class="snap-tile-box maximize" title="Maximize"><div class="pane-fill"></div></div>
             </div>
             <div style="text-align: center; font-size: 0.72rem; color: var(--text-tertiary); margin-top: 8px;">
-              Consecutive arrow taps automatically cycle 1/2 ➔ 1/3 ➔ 2/3
+              Works in Tiling mode (1/2 ➔ 1/3 ➔ 2/3) or Icon Rotation mode
             </div>
           </div>
         </div>
@@ -534,8 +530,8 @@
             <div class="card-thumbnail-preview">
               <img src="https://cdn.simpleicons.org/figma/f24e1e" class="card-app-icon-badge" alt="Figma">
               <div style="text-align: center; padding: 8px;">
-                <div style="font-size: 0.72rem; font-weight: 600; color: #bf5af2;">macOS 15 Design Tokens</div>
-                <div style="font-size: 0.62rem; color: var(--text-tertiary); margin-top: 4px;">Specular Borders &amp; Spring Physics</div>
+                <div style="font-size: 0.72rem; font-weight: 600; color: #bf5af2;">Liquid Glass Tokens</div>
+                <div style="font-size: 0.62rem; color: var(--text-tertiary); margin-top: 4px;">NSGlassEffectView &amp; Spring Physics</div>
               </div>
             </div>
             <div class="card-meta-row">
@@ -583,9 +579,9 @@
             </div>
           </div>
           <div style="padding: 16px; text-align: center; background: #0c0d12;">
-            <div style="font-size: 0.72rem; color: var(--accent-cyan); margin-bottom: 4px;">● Universal Event Forwarding</div>
+            <div style="font-size: 0.72rem; color: var(--accent-cyan); margin-bottom: 4px;">● Floating Window Mirror</div>
             <div id="pip-app" style="font-size: 0.8125rem; font-weight: 600; color: #fff;">Xcode Live Mirror</div>
-            <div style="font-size: 0.68rem; color: var(--text-tertiary); margin-top: 6px;">Mouse clicks &amp; scrolls pass directly through</div>
+            <div style="font-size: 0.68rem; color: var(--text-tertiary); margin-top: 6px;">Toggle Ghost Mode for click-through opacity</div>
           </div>
         </div>
       </div>
@@ -652,22 +648,32 @@
 
             <tr>
               <td class="feature-title-cell">
+                <strong>Native Liquid Glass &amp; Adaptive Layout</strong>
+                <span>macOS 26+ NSGlassEffectView, Clear Glass, Solid matte, Light/Dark themes &amp; auto-scaling grid</span>
+              </td>
+              <td><span class="check-icon">✓ System Native</span></td>
+              <td><span class="cross-icon">✕ Fixed Strip</span></td>
+              <td class="col-highlight"><span class="check-icon">✓ NSGlassEffectView <span class="tag-highlight">Auto-Scale</span></span></td>
+            </tr>
+
+            <tr>
+              <td class="feature-title-cell">
                 <strong>Modern ScreenCaptureKit Engine</strong>
-                <span>Hardware-accelerated 60fps capture without deprecated CoreGraphics APIs</span>
+                <span>On-demand Retina capture strictly matching each window’s native aspect ratio</span>
               </td>
               <td><span class="cross-icon">✕ No Thumbnails</span></td>
               <td><span class="cross-icon">✕ Legacy CGWindowList</span></td>
-              <td class="col-highlight"><span class="check-icon">✓ ScreenCaptureKit <span class="tag-highlight">Retina 2x</span></span></td>
+              <td class="col-highlight"><span class="check-icon">✓ ScreenCaptureKit <span class="tag-highlight">Zero Letterbox</span></span></td>
             </tr>
 
             <tr>
               <td class="feature-title-cell">
                 <strong>Captures Fully Covered Windows</strong>
-                <span>Renders live window contents even when 100% occluded by other full-screen apps</span>
+                <span>Renders live window contents even when occluded by other full-screen apps</span>
               </td>
               <td><span class="cross-icon">✕ None</span></td>
               <td><span class="cross-icon">✕ Partial / Stale</span></td>
-              <td class="col-highlight"><span class="check-icon">✓ 100% Guaranteed</span></td>
+              <td class="col-highlight"><span class="check-icon">✓ 100% Supported</span></td>
             </tr>
 
             <tr>
@@ -677,37 +683,37 @@
               </td>
               <td><span class="cross-icon">✕ Not supported</span></td>
               <td><span class="cross-icon">✕ Not supported</span></td>
-              <td class="col-highlight"><span class="check-icon">✓ Native Tab Hooks <span class="tag-highlight">Exclusive</span></span></td>
+              <td class="col-highlight"><span class="check-icon">✓ Native Tab Hooks <span class="tag-highlight">Toggleable</span></span></td>
             </tr>
 
             <tr>
               <td class="feature-title-cell">
-                <strong>Floating Picture-in-Picture &amp; Mouse Pass</strong>
-                <span>Pin any window floating on top with interactive Quartz click &amp; scroll forwarding</span>
+                <strong>Floating Picture-in-Picture &amp; Ghost Mode</strong>
+                <span>On-demand ScreenCaptureKit live stream mirror with opacity &amp; Ghost click-through</span>
               </td>
               <td><span class="cross-icon">✕ Video only</span></td>
               <td><span class="cross-icon">✕ Not supported</span></td>
-              <td class="col-highlight"><span class="check-icon">✓ PiP + Ghost Mode <span class="tag-highlight">Exclusive</span></span></td>
+              <td class="col-highlight"><span class="check-icon">✓ Live SCStream PiP <span class="tag-highlight">Optional</span></span></td>
             </tr>
 
             <tr>
               <td class="feature-title-cell">
-                <strong>Spacebar Quick Look Enlargement</strong>
-                <span>Instant high-res HUD inspection of documents, terminals, and code without switching</span>
+                <strong>Hold-to-Preview &amp; Spacebar Quick Look</strong>
+                <span>Auto-peeks cleanly on icon pause without cluttering quick switches</span>
               </td>
               <td><span class="cross-icon">✕ Not supported</span></td>
               <td><span class="cross-icon">✕ Not supported</span></td>
-              <td class="col-highlight"><span class="check-icon">✓ Spacebar Quick Look</span></td>
+              <td class="col-highlight"><span class="check-icon">✓ Pause + Space <span class="tag-highlight">v1.0</span></span></td>
             </tr>
 
             <tr>
               <td class="feature-title-cell">
-                <strong>Integrated Window Grid Snapping</strong>
-                <span>Tiling halves, thirds, quarters, and center without needing Rectangle or Magnet</span>
+                <strong>Modular Arrow Keys (Tiling or Rotation)</strong>
+                <span>Snap halves/thirds/maximize or switch cleanly to left/right icon rotation in Settings</span>
               </td>
               <td><span class="cross-icon">✕ Manual Drag</span></td>
-              <td><span class="cross-icon">✕ Not supported</span></td>
-              <td class="col-highlight"><span class="check-icon">✓ Arrow Cycle 1/2→1/3→2/3</span></td>
+              <td><span class="check-icon">✓ Arrow Navigate</span></td>
+              <td class="col-highlight"><span class="check-icon">✓ Both Modes Toggleable</span></td>
             </tr>
 
             <tr>
@@ -722,22 +728,22 @@
 
             <tr>
               <td class="feature-title-cell">
-                <strong>Zero Electron Bloat &amp; Memory Footprint</strong>
-                <span>Pure AppKit binary with negligible RAM and 0% CPU consumption</span>
+                <strong>Instant Dismiss &amp; Featherweight Binary</strong>
+                <span>Synchronous ~0.5ms panel dismiss inside a tiny 1.5 MB native Swift + AppKit bundle</span>
               </td>
-              <td><span class="check-icon">✓ ~15MB (WindowServer)</span></td>
-              <td><span class="cross-icon">~120MB - 300MB</span></td>
-              <td class="col-highlight"><span class="check-icon">✓ ~28MB Swift Native</span></td>
+              <td><span class="check-icon">✓ WindowServer Native</span></td>
+              <td><span class="cross-icon">Heavier Bundle</span></td>
+              <td class="col-highlight"><span class="check-icon">✓ 1.5 MB Native Swift</span></td>
             </tr>
 
             <tr>
               <td class="feature-title-cell">
-                <strong>Telemetry &amp; Network Requests</strong>
-                <span>100% offline security, zero analytics beacons, zero crash reporting sockets</span>
+                <strong>Telemetry &amp; Analytics</strong>
+                <span>Zero analytics beacons, zero usage tracking, 100% open-source MIT Swift</span>
               </td>
               <td><span class="cross-icon">Apple System Telemetry</span></td>
               <td><span class="cross-icon">Varies</span></td>
-              <td class="col-highlight"><span class="check-icon">✓ 0 Sockets • 100% Private</span></td>
+              <td class="col-highlight"><span class="check-icon">✓ Zero Telemetry</span></td>
             </tr>
 
             <tr>
@@ -772,50 +778,50 @@
 
       <div class="specs-grid">
         <div class="spec-card">
-          <div class="spec-stat">0.04s</div>
-          <div class="spec-label">Instant Cold Start</div>
+          <div class="spec-stat">&lt; 1ms</div>
+          <div class="spec-label">Synchronous Dismiss</div>
           <p class="spec-desc">
-            Compiled directly to machine code via SwiftPM. TabStation loads its entire window hierarchy and starts listening for chords in milliseconds.
+            Key release orders out the HUD synchronously (<code>~0.5ms</code>) via WindowServer flush while AXUIElement &amp; browser activation run off the main thread.
           </p>
         </div>
 
         <div class="spec-card">
-          <div class="spec-stat">28 MB</div>
-          <div class="spec-label">Featherweight Memory</div>
+          <div class="spec-stat">1.5 MB</div>
+          <div class="spec-label">Tiny App Bundle</div>
           <p class="spec-desc">
-            While Electron-based tools consume 400MB+ just to sit idle, TabStation runs on a modest ~28MB footprint, preserving your memory for Xcode and Docker.
+            Zero Electron, zero Chromium runtime, zero bundled frameworks. Compiled directly to native machine code via Swift Package Manager.
           </p>
         </div>
 
         <div class="spec-card">
           <div class="spec-stat">0% CPU</div>
-          <div class="spec-label">Zero Idle Drain</div>
+          <div class="spec-label">On-Demand Architecture</div>
           <p class="spec-desc">
-            Event-driven architecture based on <code>CGEventTap</code> and ScreenCaptureKit actors. While you work, TabStation sleeps completely, causing zero battery drain.
+            Driven by <code>CGEventTap</code>, background window cache refresh, and ScreenCaptureKit snapshots only when needed—never polling at 60fps in the background.
           </p>
         </div>
 
         <div class="spec-card">
-          <div class="spec-stat">4x</div>
-          <div class="spec-label">Concurrent Capture</div>
+          <div class="spec-stat">2-Tier</div>
+          <div class="spec-label">Retina Aspect Cache</div>
           <p class="spec-desc">
-            Thumbnails render up to 4 windows concurrently using Apple Silicon Metal pipelines, sized to the exact on-screen cell at 2x Retina resolution.
+            Separates thumbnail strip captures from full-resolution previews while strictly preserving each window’s real aspect ratio—zero black bars.
           </p>
         </div>
 
         <div class="spec-card">
-          <div class="spec-stat">0 Sockets</div>
-          <div class="spec-label">Air-Gapped Privacy</div>
+          <div class="spec-stat">0 Telemetry</div>
+          <div class="spec-label">Private &amp; Auditable</div>
           <p class="spec-desc">
-            TabStation contains no network libraries, no analytics SDKs, and no automatic updaters phoning home. What happens on your Mac stays on your Mac.
+            Zero analytics SDKs, zero tracking beacons, zero auto-updaters phoning home. Read every line of Swift source yourself under MIT.
           </p>
         </div>
 
         <div class="spec-card">
-          <div class="spec-stat">100%</div>
-          <div class="spec-label">Apple HIG Compliant</div>
+          <div class="spec-stat">Liquid Glass</div>
+          <div class="spec-label">Native macOS Aesthetics</div>
           <p class="spec-desc">
-            Conforms strictly to Apple Human Interface Guidelines: vibrant HUD materials, 22pt rounded corners, specular edge rims, and native spring physics.
+            Supports Apple <code>NSGlassEffectView</code> on macOS 26+, Clear Glass, and Solid matte surfaces with Light/Dark themes and continuous squircle geometry.
           </p>
         </div>
       </div>
@@ -864,11 +870,22 @@
 
           <div class="shortcut-item-row">
             <div class="shortcut-keys">
+              <span class="key-badge">Hold</span>
+              <span class="key-badge">Pause</span>
+            </div>
+            <div class="shortcut-info">
+              <div class="shortcut-name">Hold-to-Preview (Icons Only)</div>
+              <div class="shortcut-sub">Rest briefly (~0.36s) on an icon to auto-peek; hides as soon as you switch</div>
+            </div>
+          </div>
+
+          <div class="shortcut-item-row">
+            <div class="shortcut-keys">
               <span class="key-badge">Space</span>
             </div>
             <div class="shortcut-info">
-              <div class="shortcut-name">Quick Look Enlargement</div>
-              <div class="shortcut-sub">Displays full-resolution preview HUD of selected window</div>
+              <div class="shortcut-name">Persistent Quick Look</div>
+              <div class="shortcut-sub">Locks/toggles live window preview while navigating (toggleable)</div>
             </div>
           </div>
 
@@ -878,7 +895,7 @@
             </div>
             <div class="shortcut-info">
               <div class="shortcut-name">Pin Picture-in-Picture</div>
-              <div class="shortcut-sub">Pins window floating on top with click &amp; scroll pass</div>
+              <div class="shortcut-sub">Pins window floating on top with Ghost click-through (toggleable)</div>
             </div>
           </div>
 
@@ -888,8 +905,8 @@
               <span class="key-badge">→</span>
             </div>
             <div class="shortcut-info">
-              <div class="shortcut-name">Cycle Split Halves &amp; Thirds</div>
-              <div class="shortcut-sub">Repeated taps cycle 1/2 ➔ 1/3 ➔ 2/3 window tiling</div>
+              <div class="shortcut-name">Snap Halves &amp; Thirds / Rotate</div>
+              <div class="shortcut-sub">Cycles 1/2 ➔ 1/3 ➔ 2/3 tiling, or rotates icons when tiling is off</div>
             </div>
           </div>
 
@@ -899,8 +916,8 @@
               <span class="key-badge">↓</span>
             </div>
             <div class="shortcut-info">
-              <div class="shortcut-name">Maximize / Center (70%)</div>
-              <div class="shortcut-sub">Instantly expand or center the target window</div>
+              <div class="shortcut-name">Maximize &amp; Restore Window</div>
+              <div class="shortcut-sub">Fills current monitor or restores geometry (<span class="key-badge">C</span> centers at 70%)</div>
             </div>
           </div>
 
@@ -1044,7 +1061,7 @@
           </button>
           <div class="faq-answer">
             <p>
-              While AltTab is a pioneer in bringing the Windows-style switcher to macOS, TabStation was built from scratch in pure Swift with Apple’s modern ScreenCaptureKit framework. TabStation delivers capabilities unavailable in AltTab: <strong>deep browser tab switching</strong> across Chrome, Safari, Edge, and Arc; <strong>floating Picture-in-Picture</strong> with universal mouse event forwarding; <strong>Spacebar Quick Look</strong> previews; <strong>integrated keyboard tiling</strong> (1/2, 1/3, 2/3 ratios); and a lightweight ~28MB footprint that matches modern macOS design tokens.
+              While AltTab is a pioneer in bringing the Windows-style switcher to macOS, TabStation was built from scratch in pure Swift and AppKit. TabStation v1.0 delivers macOS 26+ native Liquid Glass (<code>NSGlassEffectView</code>), natural Hold-to-Preview on pause in Icons Only mode, deep browser tab switching across Chrome/Safari/Edge/Arc/Brave, floating Picture-in-Picture, and a Settings → Features tab letting you enable or disable every power feature individually.
             </p>
           </div>
         </div>
@@ -1056,7 +1073,7 @@
           </button>
           <div class="faq-answer">
             <p>
-              <strong>Yes, 100% free and open source under the MIT License.</strong> Every single superpower—including deep browser tab switching across Chrome/Safari/Arc, interactive Picture-in-Picture with mouse forwarding, Spacebar Quick Look, and keyboard window tiling—is completely unlocked for everyone forever. There are zero subscriptions, zero paywalls, zero in-app purchases, and zero ads.
+              <strong>Yes, 100% free and open source under the MIT License.</strong> Every capability—including Liquid Glass themes, Hold-to-Preview, browser tab switching, floating Picture-in-Picture, and window tiling—is unlocked forever with zero paywalls and zero subscriptions.
             </p>
           </div>
         </div>
@@ -1127,12 +1144,12 @@
 
         <div class="faq-item">
           <button class="faq-question-btn">
-            <span>Does TabStation run natively on Apple Silicon (M1/M2/M3/M4)?</span>
+            <span>Does TabStation run on Apple Silicon and macOS 26+ Liquid Glass?</span>
             <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
           <div class="faq-answer">
             <p>
-              TabStation is compiled as a Universal 2 binary with full native support for Apple Silicon (M1, M2, M3, M4, and Pro/Max/Ultra variants) as well as Intel Macs running macOS 14 Sonoma, macOS 15 Sequoia, or later.
+              Yes. TabStation runs natively on Apple Silicon Macs (M1 through M4) on macOS 14.0 Sonoma, macOS 15.0 Sequoia, and macOS 26+ (where it automatically uses native <code>NSGlassEffectView</code> Liquid Glass). You can also build from source cleanly on Intel or Apple Silicon with <code>./build-app.sh release</code>.
             </p>
           </div>
         </div>
@@ -1164,22 +1181,22 @@
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
-            <span>Download TabStation v1.2</span>
+            <span>Download TabStation v1.0</span>
           </a>
 
-          <button class="btn-secondary btn-copy-install" data-copy="git clone https://github.com/icaichen/tabstation.git &amp;&amp; cd tabstation &amp;&amp; ./build-app.sh">
+          <button class="btn-secondary btn-copy-install" data-copy="git clone https://github.com/icaichen/tabstation.git &amp;&amp; cd tabstation &amp;&amp; ./build-app.sh release">
             <span>Copy Build Command</span>
           </button>
         </div>
 
         <div class="download-meta">
-          <span>Version 1.2.0</span>
+          <span>Version 1.0.0</span>
           <span>•</span>
-          <span>~5 MB Bundle</span>
+          <span>~1.5 MB App</span>
           <span>•</span>
-          <span>Ad-hoc Signed</span>
+          <span>MIT Open Source</span>
           <span>•</span>
-          <span>macOS 14.0+</span>
+          <span>macOS 14+ (Liquid Glass on 26+)</span>
         </div>
       </div>
     </div>

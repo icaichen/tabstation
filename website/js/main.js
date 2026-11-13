@@ -70,19 +70,19 @@ function initSandboxSwitcher() {
     },
     {
       id: 2,
-      title: "zsh — ./build-app.sh (Release 60fps)",
+      title: "zsh — ./build-app.sh release",
       app: "Terminal",
       icon: "https://cdn.simpleicons.org/apple/ffffff",
       badge: "PID 4192",
-      codePreview: `$ ./build-app.sh\n[✓] Building TabStation (release mode)...\n[✓] ScreenCaptureKit framework linked.\n[✓] Ad-hoc codesign verified.\n[✓] Dist: dist/TabStation.app ready.`
+      codePreview: `$ ./build-app.sh release\n[✓] Building TabStation (release mode)...\n[✓] ScreenCaptureKit framework linked.\n[✓] Ad-hoc codesign verified.\n[✓] App: /Applications/TabStation.app ready.`
     },
     {
       id: 3,
-      title: "Design System: macOS Sonoma Tokens",
+      title: "Design System: Liquid Glass Tokens",
       app: "Figma",
       icon: "https://cdn.simpleicons.org/figma/ffffff",
       badge: "TabStation HUD",
-      codePreview: `// Figma Design Tokens\nconst Tokens = {\n  HUD_CornerRadius: 22,\n  HUD_BlurSaturate: '190%',\n  SpecularBorder: 'rgba(255,255,255,0.18)'\n};`
+      codePreview: `// Native Glass Design Tokens\nconst Tokens = {\n  Surface: 'NSGlassEffectView (.regular / .clear)',\n  HUD_CornerRadius: 22,\n  DismissLatency: '< 1ms Synchronous'\n};`
     }
   ];
 

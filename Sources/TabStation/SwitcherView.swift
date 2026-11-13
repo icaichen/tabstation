@@ -1,15 +1,5 @@
 import AppKit
 
-private extension NSColor {
-    func resolvedCGColor(for appearance: NSAppearance) -> CGColor {
-        var resolved: CGColor = cgColor
-        appearance.performAsCurrentDrawingAppearance {
-            resolved = self.cgColor
-        }
-        return resolved
-    }
-}
-
 /// One entry in the switcher grid.
 struct SwitcherItem {
     let window: WindowInfo
@@ -211,9 +201,7 @@ private final class FlippedGridDocumentView: NSView {
 /// multi-row balanced grid and crisp single-line footer/title strip.
 final class SwitcherView: NSView {
 
-    private let backgroundContainer = NSView()
-    private let visualEffect = NSVisualEffectView()
-    private let tintOverlay = NSView()
+    private let surfaceView = GlassSurfaceView(cornerRadius: Theme.panelCornerRadius)
 
     private let scrollView = NSScrollView()
     private let documentView = FlippedGridDocumentView()
@@ -310,20 +298,8 @@ final class SwitcherView: NSView {
         super.init(frame: .zero)
         wantsLayer = true
 
-        backgroundContainer.wantsLayer = true
-        backgroundContainer.layer?.cornerRadius = Theme.panelCornerRadius
-        backgroundContainer.layer?.cornerCurve = .continuous
-        backgroundContainer.layer?.masksToBounds = true
-        backgroundContainer.layer?.borderWidth = Theme.panelBorderWidth
-        addSubview(backgroundContainer)
-
-        visualEffect.material = .popover
-        visualEffect.blendingMode = .behindWindow
-        visualEffect.state = .active
-        backgroundContainer.addSubview(visualEffect)
-
-        tintOverlay.wantsLayer = true
-        backgroundContainer.addSubview(tintOverlay)
+        addSubview(surfaceView)
+        let host = surfaceView.contentContainer
 
         scrollView.drawsBackground = false
         scrollView.borderType = .noBorder
@@ -332,11 +308,11 @@ final class SwitcherView: NSView {
         scrollView.autohidesScrollers = true
         scrollView.scrollerStyle = .overlay
         scrollView.documentView = documentView
-        addSubview(scrollView)
+        host.addSubview(scrollView)
 
-        addSubview(selectedTitleLabel)
-        addSubview(noticeLabel)
-        addSubview(footerLabel)
+        host.addSubview(selectedTitleLabel)
+        host.addSubview(noticeLabel)
+        host.addSubview(footerLabel)
 
         applyBackgroundPreferences()
     }
@@ -354,25 +330,8 @@ final class SwitcherView: NSView {
     }
 
     func applyBackgroundPreferences() {
-        let appearance = effectiveAppearance
-        let style = AppearancePreferences.backgroundStyle
-        let opacity = CGFloat(AppearancePreferences.panelOpacity)
-
-        backgroundContainer.layer?.borderColor = Theme.panelBorder.resolvedCGColor(for: appearance)
-        tintOverlay.layer?.backgroundColor = Theme.panelBackingColor(for: appearance).cgColor
-
-        switch style {
-        case .frosted:
-            visualEffect.isHidden = false
-            visualEffect.material = .popover
-            visualEffect.alphaValue = max(0.35, opacity)
-        case .clear:
-            visualEffect.isHidden = false
-            visualEffect.material = .hudWindow
-            visualEffect.alphaValue = max(0.10, opacity * 0.35)
-        case .tinted:
-            visualEffect.isHidden = true
-        }
+        appearance = Theme.resolvedAppearance(for: self)
+        surfaceView.applyAppearance()
     }
 
     // MARK: - Content
@@ -689,9 +648,8 @@ final class SwitcherView: NSView {
         super.layout()
         guard bounds.width > 0, bounds.height > 0 else { return }
 
-        backgroundContainer.frame = bounds
-        visualEffect.frame = backgroundContainer.bounds
-        tintOverlay.frame = backgroundContainer.bounds
+        surfaceView.frame = bounds
+        surfaceView.layoutSubtreeIfNeeded()
 
         let padX = horizontalPadding
         let contentW = max(1, bounds.width - padX * 2)

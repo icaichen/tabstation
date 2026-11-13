@@ -1,78 +1,219 @@
 import AppKit
+import CoreMedia
 import ScreenCaptureKit
-import WebKit
+import VideoToolbox
 
-/// The content view for a pinned Picture-in-Picture window.
-/// Supports both:
-/// 1. Interactive Live Web Mode (embedded WebKit with full media/document controls for YouTube, docs, web apps)
-/// 2. Interactive Window Mirror Mode (live window capture with direct mouse click & scroll forwarding to any native app)
+/// Streams live ScreenCaptureKit video frames (`SCStream`) for a single pinned window on demand.
+/// Zero background overhead when PiP is closed; ScreenCaptureKit only emits frames on visual updates.
+private final class LiveMirrorStream: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sendable {
+
+    private let outputQueue = DispatchQueue(label: "com.tabstation.pip.scstream", qos: .userInteractive)
+    private let lock = NSLock()
+    private var stream: SCStream?
+    private var scWindow: SCWindow?
+    private var isStopped = false
+
+    var onFrame: ((CGImage) -> Void)?
+    var onStateChange: ((Bool) -> Void)?
+
+    private func withLock<T>(_ body: () -> T) -> T {
+        lock.lock()
+        defer { lock.unlock() }
+        return body()
+    }
+
+    func start(scWindow: SCWindow, pixelSize: CGSize) async {
+        let shouldStart = withLock { () -> Bool in
+            guard !isStopped else { return false }
+            self.scWindow = scWindow
+            return true
+        }
+        guard shouldStart else { return }
+
+        let filter = SCContentFilter(desktopIndependentWindow: scWindow)
+        let config = makeConfiguration(windowFrame: scWindow.frame, targetSize: pixelSize)
+        let newStream = SCStream(filter: filter, configuration: config, delegate: self)
+
+        do {
+            try newStream.addStreamOutput(self, type: .screen, sampleHandlerQueue: outputQueue)
+            try await newStream.startCapture()
+
+            let cancelled = withLock { () -> Bool in
+                if isStopped {
+                    return true
+                }
+                self.stream = newStream
+                return false
+            }
+
+            if cancelled {
+                try? await newStream.stopCapture()
+                return
+            }
+
+            DispatchQueue.main.async { [weak self] in
+                self?.onStateChange?(true)
+            }
+        } catch {
+            DispatchQueue.main.async { [weak self] in
+                self?.onStateChange?(false)
+            }
+        }
+    }
+
+    func updateSize(pixelSize: CGSize) {
+        let (activeStream, win) = withLock { (isStopped ? nil : stream, scWindow) }
+        guard let activeStream, let win else { return }
+        let config = makeConfiguration(windowFrame: win.frame, targetSize: pixelSize)
+        Task {
+            try? await activeStream.updateConfiguration(config)
+        }
+    }
+
+    func stop() {
+        let activeStream = withLock { () -> SCStream? in
+            isStopped = true
+            let current = stream
+            stream = nil
+            scWindow = nil
+            onFrame = nil
+            onStateChange = nil
+            return current
+        }
+
+        if let activeStream {
+            activeStream.stopCapture { _ in }
+        }
+    }
+
+    private func makeConfiguration(windowFrame: CGRect, targetSize: CGSize) -> SCStreamConfiguration {
+        let srcW = max(1, windowFrame.width)
+        let srcH = max(1, windowFrame.height)
+        let scale = min(max(64, targetSize.width) / srcW, max(64, targetSize.height) / srcH, 2.0)
+
+        var width = max(64, Int((srcW * scale).rounded()))
+        var height = max(64, Int((srcH * scale).rounded()))
+        // Even dimensions keep video pixel converters happy on all GPUs.
+        if width % 2 != 0 { width += 1 }
+        if height % 2 != 0 { height += 1 }
+
+        let config = SCStreamConfiguration()
+        config.width = width
+        config.height = height
+        config.minimumFrameInterval = CMTime(value: 1, timescale: 30)
+        config.queueDepth = 3
+        config.showsCursor = false
+        config.scalesToFit = true
+        config.pixelFormat = kCVPixelFormatType_32BGRA
+        return config
+    }
+
+    // MARK: - SCStreamOutput
+
+    func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of outputType: SCStreamOutputType) {
+        guard outputType == .screen else { return }
+        guard withLock({ !isStopped }) else { return }
+
+        guard let attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: false) as? [[SCStreamFrameInfo: Any]],
+              let statusRaw = attachments.first?[.status] as? Int,
+              let status = SCFrameStatus(rawValue: statusRaw),
+              status == .complete else {
+            return
+        }
+
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        var cgImage: CGImage?
+        guard VTCreateCGImageFromCVPixelBuffer(pixelBuffer, options: nil, imageOut: &cgImage) == noErr,
+              let image = cgImage else {
+            return
+        }
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let callback = self.withLock { self.isStopped ? nil : self.onFrame }
+            callback?(image)
+        }
+    }
+
+    // MARK: - SCStreamDelegate
+
+    func stream(_ stream: SCStream, didStopWithError error: any Error) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let stopped = self.withLock { () -> Bool in
+                self.stream = nil
+                return self.isStopped
+            }
+            if !stopped {
+                self.onStateChange?(false)
+            }
+        }
+    }
+}
+
+/// Content view for a ScreenCaptureKit live Picture-in-Picture window.
 final class PinnedWindowContentView: NSView {
 
     let windowInfo: WindowInfo
-    let webURL: URL?
 
-    private let visualEffect = NSVisualEffectView()
+    private let surfaceView = GlassSurfaceView(cornerRadius: 12)
     private let titleBar = NSView()
+    private let titleSeparator = NSView()
+    private let liveDot = NSView()
     private let iconView = NSImageView()
     private let titleLabel = NSTextField(labelWithString: "")
 
     private let ghostButton = NSButton()
     private let opacityButton = NSButton()
-    private let modeButton = NSButton()
     private let focusButton = NSButton()
     private let closeButton = NSButton()
 
-    private let imageView = NSImageView()
-    private var webView: WKWebView?
+    private let mirrorHost = NSView()
+    private let fallbackIconView = NSImageView()
+    private let liveStream = LiveMirrorStream()
+    private var appearanceObserver: NSObjectProtocol?
 
-    private var refreshTimer: Timer?
     var onClose: (() -> Void)?
     var onGhostToggled: ((Bool) -> Void)?
 
     private(set) var isGhostMode = false
-    private(set) var isWebMode = false
 
     private let opacityLevels: [CGFloat] = [1.0, 0.80, 0.55, 0.35]
     private var currentOpacityIndex = 0
 
     init(window: WindowInfo) {
         self.windowInfo = window
-
-        // Detect if this window is or contains a web URL
-        var resolvedURL: URL? = nil
-        if let tabUrl = window.browserTab?.url, let u = URL(string: tabUrl) {
-            resolvedURL = u
-        } else if let activeUrlStr = BrowserTabService.queryActiveURL(for: window.pid), let u = URL(string: activeUrlStr) {
-            resolvedURL = u
-        }
-        self.webURL = resolvedURL
-        // Default to Web View for web URLs, especially YouTube / documents
-        self.isWebMode = (resolvedURL != nil)
-
         super.init(frame: .zero)
         buildUI()
-        if !isWebMode {
-            startRefreshing()
+        applyAppearance()
+        appearanceObserver = NotificationCenter.default.addObserver(
+            forName: .tabStationAppearanceChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.applyAppearance()
         }
+        startLiveStream()
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
     private func buildUI() {
-        visualEffect.material = .hudWindow
-        visualEffect.blendingMode = .behindWindow
-        visualEffect.state = .active
-        visualEffect.wantsLayer = true
-        visualEffect.layer?.cornerRadius = 12
-        visualEffect.layer?.masksToBounds = true
-        visualEffect.layer?.borderWidth = 0.5
-        visualEffect.layer?.borderColor = NSColor.white.withAlphaComponent(0.25).cgColor
-        addSubview(visualEffect)
+        wantsLayer = true
+        surfaceView.autoresizingMask = [.width, .height]
+        addSubview(surfaceView)
 
-        // Title bar
+        let container = surfaceView.contentContainer
+
         titleBar.wantsLayer = true
-        titleBar.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.45).cgColor
+        titleSeparator.wantsLayer = true
+
+        liveDot.wantsLayer = true
+        liveDot.layer?.cornerRadius = 3
+        liveDot.layer?.backgroundColor = NSColor.systemOrange.cgColor
+        liveDot.toolTip = "Connecting ScreenCaptureKit stream…"
+        titleBar.addSubview(liveDot)
 
         iconView.image = NSRunningApplication(processIdentifier: windowInfo.pid)?.icon
         iconView.imageScaling = .scaleProportionallyUpOrDown
@@ -85,96 +226,65 @@ final class PinnedWindowContentView: NSView {
         titleLabel.lineBreakMode = .byTruncatingTail
         titleBar.addSubview(titleLabel)
 
-        // Ghost mode button (Click-through)
         ghostButton.isBordered = false
         ghostButton.bezelStyle = .regularSquare
         ghostButton.image = NSImage(systemSymbolName: "cursorarrow.rays", accessibilityDescription: "Ghost Mode (Click-Through)")
-        ghostButton.contentTintColor = NSColor.white.withAlphaComponent(0.8)
-        ghostButton.toolTip = "Ghost Mode (Click-Through)\nAllows clicking through this PiP window to apps behind it"
+        ghostButton.toolTip = "Ghost Mode (Click-Through)\nLet clicks pass straight through this PiP window"
         ghostButton.target = self
         ghostButton.action = #selector(toggleGhostMode)
         titleBar.addSubview(ghostButton)
 
-        // Opacity cycle button
         opacityButton.isBordered = false
         opacityButton.bezelStyle = .regularSquare
         opacityButton.image = NSImage(systemSymbolName: "circle.lefthalf.filled", accessibilityDescription: "Adjust Opacity")
-        opacityButton.contentTintColor = NSColor.white.withAlphaComponent(0.8)
-        opacityButton.toolTip = "Opacity: 100%\nClick to cycle (100% -> 80% -> 55% -> 35%)\nOr scroll wheel over title bar to fine-tune"
+        opacityButton.toolTip = "Opacity: 100%\nClick to cycle (100% -> 80% -> 55% -> 35%)\nOr scroll wheel over title bar"
         opacityButton.target = self
         opacityButton.action = #selector(cycleOpacity)
         titleBar.addSubview(opacityButton)
 
-        // Mode switch button (Live Web View vs Window Mirror)
-        if webURL != nil {
-            modeButton.isBordered = false
-            modeButton.bezelStyle = .regularSquare
-            modeButton.image = NSImage(systemSymbolName: isWebMode ? "globe" : "macwindow.on.rectangle", accessibilityDescription: "Toggle Mode")
-            modeButton.contentTintColor = isWebMode ? NSColor.systemTeal : NSColor.white.withAlphaComponent(0.8)
-            modeButton.toolTip = isWebMode
-                ? "Live Web View (Interactive)\nClick to switch to Window Mirror"
-                : "Window Mirror (Click-Forwarding)\nClick to switch to Live Web View"
-            modeButton.target = self
-            modeButton.action = #selector(toggleMode)
-            titleBar.addSubview(modeButton)
-        } else {
-            modeButton.isHidden = true
-        }
-
-        // Focus original window
         focusButton.isBordered = false
         focusButton.bezelStyle = .regularSquare
         focusButton.image = NSImage(systemSymbolName: "arrow.up.forward.app.fill", accessibilityDescription: "Focus Original Window")
-        focusButton.contentTintColor = NSColor.white.withAlphaComponent(0.8)
         focusButton.toolTip = "Focus Original Window (Double-click anywhere)"
         focusButton.target = self
         focusButton.action = #selector(focusOriginalWindow)
         titleBar.addSubview(focusButton)
 
-        // Close PiP
         closeButton.isBordered = false
         closeButton.bezelStyle = .regularSquare
         closeButton.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: "Close PiP")
-        closeButton.contentTintColor = NSColor.white.withAlphaComponent(0.8)
         closeButton.toolTip = "Close PiP"
         closeButton.target = self
         closeButton.action = #selector(closeClicked)
         titleBar.addSubview(closeButton)
 
-        visualEffect.addSubview(titleBar)
+        // Video frame canvas backed directly by CALayer.contents for zero-copy Retina updates.
+        mirrorHost.wantsLayer = true
+        mirrorHost.layer?.contentsGravity = .resizeAspect
+        mirrorHost.layer?.masksToBounds = true
+        mirrorHost.layer?.cornerRadius = 8
+        mirrorHost.layer?.cornerCurve = .continuous
 
-        // Setup Main Preview Image (for Mirror Mode)
-        imageView.imageScaling = .scaleProportionallyUpOrDown
-        imageView.imageAlignment = .alignCenter
-        imageView.wantsLayer = true
-        visualEffect.addSubview(imageView)
+        fallbackIconView.image = NSRunningApplication(processIdentifier: windowInfo.pid)?.icon
+        fallbackIconView.imageScaling = .scaleProportionallyUpOrDown
+        mirrorHost.addSubview(fallbackIconView)
 
-        // Setup WebKit View (for Live Web Mode)
-        if let url = webURL {
-            let config = WKWebViewConfiguration()
-            config.allowsAirPlayForMediaPlayback = true
-            config.mediaTypesRequiringUserActionForPlayback = []
-            let web = WKWebView(frame: .zero, configuration: config)
-            web.allowsBackForwardNavigationGestures = true
-            web.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
-            web.load(URLRequest(url: url))
-            web.wantsLayer = true
-            visualEffect.addSubview(web)
-            self.webView = web
-        }
-
-        updateDisplayModeVisibility()
-        updateThumbnail()
+        container.addSubview(mirrorHost)
+        container.addSubview(titleSeparator)
+        container.addSubview(titleBar)
     }
 
     override func layout() {
         super.layout()
-        visualEffect.frame = bounds
+        surfaceView.frame = bounds
         let b = bounds
         let barHeight: CGFloat = 26
 
         titleBar.frame = NSRect(x: 0, y: b.height - barHeight, width: b.width, height: barHeight)
-        iconView.frame = NSRect(x: 7, y: 5, width: 16, height: 16)
+        titleSeparator.frame = NSRect(x: 0, y: b.height - barHeight, width: b.width, height: 0.5)
+
+        liveDot.frame = NSRect(x: 8, y: 10, width: 6, height: 6)
+        iconView.frame = NSRect(x: 18, y: 5, width: 16, height: 16)
 
         let btnSize: CGFloat = 18
         let btnY: CGFloat = 4
@@ -182,215 +292,131 @@ final class PinnedWindowContentView: NSView {
 
         closeButton.frame = NSRect(x: max(0, b.width - 24), y: btnY, width: btnSize, height: btnSize)
         focusButton.frame = NSRect(x: max(0, closeButton.frame.minX - btnSize - spacing), y: btnY, width: btnSize, height: btnSize)
-
-        var lastBtnMinX = focusButton.frame.minX
-        if !modeButton.isHidden {
-            modeButton.frame = NSRect(x: max(0, lastBtnMinX - btnSize - spacing), y: btnY, width: btnSize, height: btnSize)
-            lastBtnMinX = modeButton.frame.minX
-        }
-
-        opacityButton.frame = NSRect(x: max(0, lastBtnMinX - btnSize - spacing), y: btnY, width: btnSize, height: btnSize)
+        opacityButton.frame = NSRect(x: max(0, focusButton.frame.minX - btnSize - spacing), y: btnY, width: btnSize, height: btnSize)
         ghostButton.frame = NSRect(x: max(0, opacityButton.frame.minX - btnSize - spacing), y: btnY, width: btnSize, height: btnSize)
 
+        let titleStartX: CGFloat = 39
         let rightEdgeOfTitle = ghostButton.frame.minX - 6
-        titleLabel.frame = NSRect(x: 28, y: 5, width: max(0, rightEdgeOfTitle - 28), height: 16)
+        titleLabel.frame = NSRect(x: titleStartX, y: 5, width: max(0, rightEdgeOfTitle - titleStartX), height: 16)
 
-        let contentFrame = NSRect(x: 0, y: 0, width: b.width, height: max(0, b.height - barHeight))
-        imageView.frame = contentFrame
-        webView?.frame = contentFrame
+        let contentFrame = NSRect(x: 4, y: 4, width: max(0, b.width - 8), height: max(0, b.height - barHeight - 6))
+        mirrorHost.frame = contentFrame
+        let iconSize = min(48, min(contentFrame.width, contentFrame.height) * 0.35)
+        fallbackIconView.frame = NSRect(
+            x: (contentFrame.width - iconSize) / 2,
+            y: (contentFrame.height - iconSize) / 2,
+            width: iconSize,
+            height: iconSize
+        )
     }
 
-    private func updateDisplayModeVisibility() {
-        if isWebMode, let webView {
-            webView.isHidden = false
-            imageView.isHidden = true
-            refreshTimer?.invalidate()
-            refreshTimer = nil
-            modeButton.image = NSImage(systemSymbolName: "globe", accessibilityDescription: "Live Web Mode")
-            modeButton.contentTintColor = NSColor.systemTeal
-            modeButton.toolTip = "Live Web View (Interactive)\nClick to switch to Window Mirror"
-        } else {
-            webView?.isHidden = true
-            imageView.isHidden = false
-            modeButton.image = NSImage(systemSymbolName: "macwindow.on.rectangle", accessibilityDescription: "Window Mirror Mode")
-            modeButton.contentTintColor = NSColor.white.withAlphaComponent(0.8)
-            modeButton.toolTip = "Window Mirror (Click-Forwarding)\nClick to switch to Live Web View"
-            startRefreshing()
-        }
+    func applyAppearance() {
+        let resolved = Theme.resolvedAppearance(for: self)
+        appearance = resolved
+        surfaceView.applyAppearance()
+        titleSeparator.layer?.backgroundColor = Theme.cellBorder.resolvedCGColor(for: resolved)
+        mirrorHost.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.18).resolvedCGColor(for: resolved)
+
+        let tint = NSColor.labelColor.withAlphaComponent(0.78)
+        ghostButton.contentTintColor = isGhostMode ? NSColor.systemTeal : tint
+        opacityButton.contentTintColor = tint
+        focusButton.contentTintColor = tint
+        closeButton.contentTintColor = tint
     }
 
-    @objc private func toggleMode() {
-        guard webURL != nil else { return }
-        isWebMode.toggle()
-        updateDisplayModeVisibility()
-        if !isWebMode {
-            updateThumbnail()
-        }
+    // MARK: - ScreenCaptureKit Live Stream
+
+    private func currentStreamPixelSize() -> CGSize {
+        let scale = window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2.0
+        let contentW = max(360, bounds.width)
+        let contentH = max(220, bounds.height)
+        return CGSize(width: contentW * scale, height: contentH * scale)
     }
 
-    // MARK: - Live Capture & Fast Refresh
+    private func startLiveStream() {
+        let targetInfo = windowInfo
+        let initialSize = currentStreamPixelSize()
 
-    private func startRefreshing() {
-        guard !isWebMode else { return }
-        updateThumbnail()
-        refreshTimer?.invalidate()
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
-            self?.updateThumbnail()
+        liveStream.onFrame = { [weak self] image in
+            self?.renderFrame(image)
         }
-    }
+        liveStream.onStateChange = { [weak self] isLive in
+            guard let self else { return }
+            self.liveDot.layer?.backgroundColor = (isLive ? NSColor.systemGreen : NSColor.systemOrange).cgColor
+            self.liveDot.toolTip = isLive
+                ? "ScreenCaptureKit Live Mirror (30fps max)"
+                : "Stream unavailable (showing snapshot)"
+        }
 
-    private func triggerFastRefresh() {
-        guard !isWebMode else { return }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
-            self?.updateThumbnail()
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-            self?.updateThumbnail()
-        }
-    }
-
-    private func updateThumbnail() {
-        guard !isWebMode else { return }
-        let size = CGSize(width: max(200, bounds.width * 2), height: max(140, bounds.height * 2))
         Task { [weak self] in
             guard let self else { return }
-            let image = await ThumbnailService.shared.thumbnail(windowID: self.windowInfo.id, pixelSize: size)
-            await MainActor.run {
-                if let image {
-                    self.imageView.image = NSImage(cgImage: image, size: .zero)
-                } else if self.imageView.image == nil {
-                    self.imageView.image = NSRunningApplication(processIdentifier: self.windowInfo.pid)?.icon
-                }
+            guard let scWindow = await ThumbnailService.shared.shareableWindow(for: targetInfo) else {
+                await self.loadFallbackSnapshot(windowID: targetInfo.id, pixelSize: initialSize)
+                return
             }
+
+            // Paint a quick initial frame immediately while SCStream completes startup.
+            await self.loadFallbackSnapshot(windowID: scWindow.windowID, pixelSize: initialSize)
+            await self.liveStream.start(scWindow: scWindow, pixelSize: initialSize)
         }
     }
 
-    // MARK: - Direct Mouse Event Forwarding (Universal)
+    @MainActor
+    private func renderFrame(_ image: CGImage) {
+        fallbackIconView.isHidden = true
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        mirrorHost.layer?.contents = image
+        CATransaction.commit()
+    }
+
+    private func loadFallbackSnapshot(windowID: CGWindowID, pixelSize: CGSize) async {
+        guard let image = await ThumbnailService.shared.thumbnail(
+            windowID: windowID,
+            pixelSize: pixelSize,
+            tier: .preview
+        ) else {
+            return
+        }
+        await MainActor.run { [weak self] in
+            guard let self, self.mirrorHost.layer?.contents == nil else { return }
+            self.renderFrame(image)
+        }
+    }
+
+    func updateStreamSize() {
+        liveStream.updateSize(pixelSize: currentStreamPixelSize())
+    }
+
+    func stopStream() {
+        liveStream.stop()
+        if let appearanceObserver {
+            NotificationCenter.default.removeObserver(appearanceObserver)
+            self.appearanceObserver = nil
+        }
+    }
+
+    // MARK: - Mouse Interactions
 
     override func mouseDown(with event: NSEvent) {
         let loc = convert(event.locationInWindow, from: nil)
-        if titleBar.frame.contains(loc) {
-            super.mouseDown(with: event)
-            return
-        }
-
-        if event.clickCount >= 2 {
+        if !titleBar.frame.contains(loc), event.clickCount >= 2 {
             focusOriginalWindow()
             return
         }
-
-        if !isWebMode {
-            forwardMouseEvent(event: event, isDown: true)
-            showClickRipple(at: loc)
-        } else {
-            super.mouseDown(with: event)
-        }
-    }
-
-    override func mouseUp(with event: NSEvent) {
-        let loc = convert(event.locationInWindow, from: nil)
-        if titleBar.frame.contains(loc) {
-            super.mouseUp(with: event)
-            return
-        }
-
-        if !isWebMode {
-            forwardMouseEvent(event: event, isDown: false)
-            triggerFastRefresh()
-        } else {
-            super.mouseUp(with: event)
-        }
+        super.mouseDown(with: event)
     }
 
     override func scrollWheel(with event: NSEvent) {
         let loc = convert(event.locationInWindow, from: nil)
-        if titleBar.frame.contains(loc) {
-            guard let win = window else { return }
+        if titleBar.frame.contains(loc), let win = window {
             let delta = event.scrollingDeltaY * 0.02
             let newAlpha = min(1.0, max(0.25, win.alphaValue + delta))
             win.alphaValue = newAlpha
-            opacityButton.toolTip = "Opacity: \(Int(newAlpha * 100))%\nClick to cycle\nOr scroll wheel over title bar to fine-tune"
+            opacityButton.toolTip = "Opacity: \(Int(newAlpha * 100))%\nClick to cycle\nOr scroll wheel over title bar"
             return
         }
-
-        if !isWebMode {
-            forwardScrollEvent(event: event)
-            triggerFastRefresh()
-        } else {
-            super.scrollWheel(with: event)
-        }
-    }
-
-    private func forwardMouseEvent(event: NSEvent, isDown: Bool) {
-        let loc = convert(event.locationInWindow, from: nil)
-        guard imageView.bounds.width > 0, imageView.bounds.height > 0 else { return }
-
-        // Convert PiP view coordinates to real window Quartz screen coordinates
-        let normX = max(0, min(1, loc.x / imageView.bounds.width))
-        let normY = max(0, min(1, 1.0 - (loc.y / imageView.bounds.height)))
-
-        let targetX = windowInfo.bounds.minX + normX * windowInfo.bounds.width
-        let targetY = windowInfo.bounds.minY + normY * windowInfo.bounds.height
-        let targetPt = CGPoint(x: targetX.rounded(), y: targetY.rounded())
-
-        let source = CGEventSource(stateID: .combinedSessionState)
-        let eventType: CGEventType = isDown ? .leftMouseDown : .leftMouseUp
-
-        if let evt = CGEvent(mouseEventSource: source, mouseType: eventType, mouseCursorPosition: targetPt, mouseButton: .left) {
-            evt.setIntegerValueField(.mouseEventClickState, value: Int64(max(1, event.clickCount)))
-            evt.postToPid(windowInfo.pid)
-            evt.post(tap: .cghidEventTap)
-        }
-    }
-
-    private func forwardScrollEvent(event: NSEvent) {
-        let loc = convert(event.locationInWindow, from: nil)
-        guard imageView.bounds.width > 0, imageView.bounds.height > 0 else { return }
-
-        let normX = max(0, min(1, loc.x / imageView.bounds.width))
-        let normY = max(0, min(1, 1.0 - (loc.y / imageView.bounds.height)))
-
-        let targetX = windowInfo.bounds.minX + normX * windowInfo.bounds.width
-        let targetY = windowInfo.bounds.minY + normY * windowInfo.bounds.height
-        let targetPt = CGPoint(x: targetX.rounded(), y: targetY.rounded())
-
-        let source = CGEventSource(stateID: .combinedSessionState)
-        let deltaY = Int32(event.scrollingDeltaY * 6)
-        let deltaX = Int32(event.scrollingDeltaX * 6)
-
-        if let scrollEvt = CGEvent(scrollWheelEvent2Source: source, units: .pixel, wheelCount: 2, wheel1: deltaY, wheel2: deltaX, wheel3: 0) {
-            scrollEvt.location = targetPt
-            scrollEvt.postToPid(windowInfo.pid)
-            scrollEvt.post(tap: .cghidEventTap)
-        }
-    }
-
-    private func showClickRipple(at point: NSPoint) {
-        let ripple = CAShapeLayer()
-        let radius: CGFloat = 16
-        ripple.path = CGPath(ellipseIn: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2), transform: nil)
-        ripple.fillColor = NSColor.systemTeal.withAlphaComponent(0.35).cgColor
-        ripple.strokeColor = NSColor.white.withAlphaComponent(0.8).cgColor
-        ripple.lineWidth = 1.0
-        layer?.addSublayer(ripple)
-
-        CATransaction.begin()
-        CATransaction.setCompletionBlock {
-            ripple.removeFromSuperlayer()
-        }
-        let scaleAnim = CABasicAnimation(keyPath: "transform.scale")
-        scaleAnim.fromValue = 0.5
-        scaleAnim.toValue = 1.4
-        let fadeAnim = CABasicAnimation(keyPath: "opacity")
-        fadeAnim.fromValue = 1.0
-        fadeAnim.toValue = 0.0
-
-        let group = CAAnimationGroup()
-        group.animations = [scaleAnim, fadeAnim]
-        group.duration = 0.22
-        group.timingFunction = CAMediaTimingFunction(name: .easeOut)
-        ripple.add(group, forKey: "ripple")
-        CATransaction.commit()
+        super.scrollWheel(with: event)
     }
 
     // MARK: - Ghost Mode & Opacity
@@ -399,11 +425,11 @@ final class PinnedWindowContentView: NSView {
         guard let win = window else { return }
         isGhostMode.toggle()
         win.ignoresMouseEvents = isGhostMode
+        ghostButton.contentTintColor = isGhostMode
+            ? NSColor.systemTeal
+            : NSColor.labelColor.withAlphaComponent(0.78)
         if isGhostMode {
-            ghostButton.contentTintColor = NSColor.systemTeal
             win.alphaValue = min(win.alphaValue, 0.65)
-        } else {
-            ghostButton.contentTintColor = NSColor.white.withAlphaComponent(0.8)
         }
         onGhostToggled?(isGhostMode)
     }
@@ -412,7 +438,9 @@ final class PinnedWindowContentView: NSView {
         guard let win = window else { return }
         isGhostMode = active
         win.ignoresMouseEvents = active
-        ghostButton.contentTintColor = active ? NSColor.systemTeal : NSColor.white.withAlphaComponent(0.8)
+        ghostButton.contentTintColor = active
+            ? NSColor.systemTeal
+            : NSColor.labelColor.withAlphaComponent(0.78)
         if active {
             win.alphaValue = min(win.alphaValue, 0.65)
         }
@@ -422,7 +450,7 @@ final class PinnedWindowContentView: NSView {
         currentOpacityIndex = (currentOpacityIndex + 1) % opacityLevels.count
         let alpha = opacityLevels[currentOpacityIndex]
         window?.alphaValue = alpha
-        opacityButton.toolTip = "Opacity: \(Int(alpha * 100))%\nClick to cycle\nOr scroll wheel over title bar to fine-tune"
+        opacityButton.toolTip = "Opacity: \(Int(alpha * 100))%\nClick to cycle\nOr scroll wheel over title bar"
     }
 
     @objc private func focusOriginalWindow() {
@@ -430,19 +458,17 @@ final class PinnedWindowContentView: NSView {
     }
 
     @objc private func closeClicked() {
-        refreshTimer?.invalidate()
-        refreshTimer = nil
+        stopStream()
         onClose?()
     }
 
     deinit {
-        refreshTimer?.invalidate()
+        stopStream()
     }
 }
 
-/// A floating Picture-in-Picture (PiP) window that stays always-on-top across
-/// all spaces and full-screen applications, mirroring a pinned window.
-final class PinnedWindowPanel: NSPanel {
+/// Floating always-on-top Picture-in-Picture window backed by live ScreenCaptureKit streaming.
+final class PinnedWindowPanel: NSPanel, NSWindowDelegate {
 
     let windowInfo: WindowInfo
     private let pinContentView: PinnedWindowContentView
@@ -471,7 +497,7 @@ final class PinnedWindowPanel: NSPanel {
 
         let aspect = window.aspectRatio
         let width: CGFloat = 360
-        let height: CGFloat = (width / aspect).rounded() + 28
+        let height: CGFloat = (width / aspect).rounded() + 30
 
         let vf = screen.visibleFrame
         let initialX = vf.maxX - width - 24
@@ -494,7 +520,17 @@ final class PinnedWindowPanel: NSPanel {
         minSize = NSSize(width: 240, height: 160)
         maxSize = NSSize(width: 1100, height: 780)
         aspectRatio = NSSize(width: width, height: height)
+        delegate = self
         contentView = pinContentView
+    }
+
+    func windowDidEndLiveResize(_ notification: Notification) {
+        pinContentView.updateStreamSize()
+    }
+
+    override func close() {
+        pinContentView.stopStream()
+        super.close()
     }
 }
 
@@ -531,7 +567,7 @@ final class PinManager {
         }
         panel.orderFrontRegardless()
         pinnedPanels[window.id] = panel
-        return (true, "Pinned \(window.ownerName) to PiP")
+        return (true, "Pinned \(window.ownerName) to Live PiP")
     }
 
     func disableGhostModeForAll() {

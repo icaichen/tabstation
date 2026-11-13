@@ -56,6 +56,23 @@ actor ThumbnailService {
         }
     }
 
+    /// Resolves the live ScreenCaptureKit window handle for a `WindowInfo`.
+    /// When a virtual item (such as a browser tab ID) is passed, falls back to a
+    /// real layer-0 window owned by the same process.
+    func shareableWindow(for window: WindowInfo) async -> SCWindow? {
+        guard await refresh() else { return nil }
+        if window.id > 0, (window.id & 0xFF00_0000) != 0x7F00_0000, let exact = windowsByID[window.id] {
+            return exact
+        }
+        let pidWindows = windowsByID.values.filter { $0.owningApplication?.processID == window.pid }
+        if let titleMatched = pidWindows.first(where: { !$0.title.isNilOrEmpty && window.title.localizedCaseInsensitiveContains($0.title ?? "") }) {
+            return titleMatched
+        }
+        return pidWindows.max { lhs, rhs in
+            (lhs.frame.width * lhs.frame.height) < (rhs.frame.width * rhs.frame.height)
+        }
+    }
+
     /// Captures one window fitting within `pixelSize`, strictly preserving the
     /// window's real ScreenCaptureKit aspect ratio to prevent black letterbox bars.
     func thumbnail(
@@ -109,4 +126,10 @@ actor ThumbnailService {
 
 extension CGSize {
     var isUsable: Bool { width >= 1 && height >= 1 }
+}
+
+private extension Optional where Wrapped == String {
+    var isNilOrEmpty: Bool {
+        self?.isEmpty ?? true
+    }
 }

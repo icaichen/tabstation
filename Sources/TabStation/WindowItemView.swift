@@ -1,15 +1,5 @@
 import AppKit
 
-private extension NSColor {
-    func resolvedCGColor(for appearance: NSAppearance) -> CGColor {
-        var resolved: CGColor = cgColor
-        appearance.performAsCurrentDrawingAppearance {
-            resolved = self.cgColor
-        }
-        return resolved
-    }
-}
-
 // MARK: - Action Pill Button
 
 /// A tactile macOS-style micro-action button with smooth rounded hover highlight.
@@ -570,11 +560,16 @@ final class WindowItemView: NSView {
     }
 
     override func mouseEntered(with event: NSEvent) {
-        pillBar.isHidden = false
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.08
-            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            self.pillBar.animator().alphaValue = 1.0
+        if FeaturePreferences.hoverActionPillsEnabled {
+            pillBar.isHidden = false
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.08
+                ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                self.pillBar.animator().alphaValue = 1.0
+            }
+        } else {
+            pillBar.isHidden = true
+            pillBar.alphaValue = 0.0
         }
         guard !isSelected else { return }
         onHover?(self)

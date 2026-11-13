@@ -31,7 +31,7 @@ enum DisplayStyle: String, CaseIterable {
         get {
             guard let raw = UserDefaults.standard.string(forKey: "TabStation.displayStyle"),
                   let style = DisplayStyle(rawValue: raw) else {
-                return .full
+                return .thumbnailsOnly
             }
             return style
         }
@@ -131,8 +131,8 @@ enum BackgroundStyle: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .frosted: return "Frosted Glass"
-        case .clear: return "Transparent"
+        case .frosted: return "Liquid Glass"
+        case .clear: return "Clear Glass"
         case .tinted: return "Solid"
         }
     }
@@ -187,7 +187,7 @@ enum AppearancePreferences {
     }
 
     static var showFooterHints: Bool {
-        get { UserDefaults.standard.object(forKey: Keys.showFooterHints) as? Bool ?? false }
+        get { UserDefaults.standard.object(forKey: Keys.showFooterHints) as? Bool ?? true }
         set {
             UserDefaults.standard.set(newValue, forKey: Keys.showFooterHints)
             postChange()
@@ -308,4 +308,88 @@ enum AppearancePreferences {
 
 extension Notification.Name {
     static let tabStationAppearanceChanged = Notification.Name("TabStation.appearanceChanged")
+}
+
+/// User-configurable feature toggles exposed in the Preferences "Features" tab.
+enum FeaturePreferences {
+    private enum Keys {
+        static let arrowKeySnapping = "TabStation.arrowKeySnapping"
+        static let spaceQuickLook = "TabStation.spaceQuickLook"
+        static let hoverActionPills = "TabStation.hoverActionPills"
+        static let pinShortcut = "TabStation.pinShortcut"
+        static let displayMoveShortcut = "TabStation.displayMoveShortcut"
+    }
+
+    static var arrowKeySnappingEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: Keys.arrowKeySnapping) as? Bool ?? true }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Keys.arrowKeySnapping)
+            postChange()
+        }
+    }
+
+    static var spaceQuickLookEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: Keys.spaceQuickLook) as? Bool ?? true }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Keys.spaceQuickLook)
+            postChange()
+        }
+    }
+
+    static var hoverActionPillsEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: Keys.hoverActionPills) as? Bool ?? true }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Keys.hoverActionPills)
+            postChange()
+        }
+    }
+
+    static var pinShortcutEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: Keys.pinShortcut) as? Bool ?? true }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Keys.pinShortcut)
+            postChange()
+        }
+    }
+
+    static var displayMoveShortcutEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: Keys.displayMoveShortcut) as? Bool ?? true }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Keys.displayMoveShortcut)
+            postChange()
+        }
+    }
+
+    static func resetDefaults() {
+        for key in [
+            Keys.arrowKeySnapping,
+            Keys.spaceQuickLook,
+            Keys.hoverActionPills,
+            Keys.pinShortcut,
+            Keys.displayMoveShortcut
+        ] {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+        postChange()
+    }
+
+    private static func postChange() {
+        NotificationCenter.default.post(name: .tabStationAppearanceChanged, object: nil)
+    }
+}
+
+/// General workspace behavior defaults.
+enum GeneralPreferences {
+    private enum Keys {
+        static let followActiveDisplay = "TabStation.followActiveDisplay"
+    }
+
+    static var followActiveDisplay: Bool {
+        get { UserDefaults.standard.object(forKey: Keys.followActiveDisplay) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: Keys.followActiveDisplay) }
+    }
+
+    static func resetDefaults() {
+        UserDefaults.standard.removeObject(forKey: Keys.followActiveDisplay)
+    }
 }

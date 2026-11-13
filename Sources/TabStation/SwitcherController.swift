@@ -25,6 +25,8 @@ final class SwitcherController {
 
     private var dwellPrewarmWorkItem: DispatchWorkItem?
     private var dwellShowWorkItem: DispatchWorkItem?
+    private var transientNoticeWorkItem: DispatchWorkItem?
+    private var quickLookPinnedBySpace = false
     private let dwellPrewarmDelay: TimeInterval = 0.12
     private let dwellShowDelay: TimeInterval = 0.36
 
@@ -222,6 +224,7 @@ final class SwitcherController {
 
         case .escape:
             if quickLook.isVisible {
+                quickLookPinnedBySpace = false
                 quickLook.hideAnimated()
                 return
             }
@@ -368,21 +371,25 @@ final class SwitcherController {
         loadThumbnails()
     }
 
-    /// Legend for the panel footer, derived from the live shortcuts.
+    /// Legend for the panel footer, derived from the live shortcuts and enabled features.
     private func makeHints() -> [String] {
         let all = ShortcutStore.loadAll()
         let p = all[.primary] ?? .optionTab
         let s = all[.sameApp] ?? Shortcut(modifiers: [.option], keyCode: KeyCode.grave)
         let activeKey = appFilterEnabled ? s.displayString : p.displayString
-        return [
-            "\(activeKey) next",
-            "space peek",
-            "←/→ snap",
-            "↑ max",
-            "P pin",
-            "D display",
-            "W close",
-        ]
+        var list = ["\(activeKey) next"]
+        if FeaturePreferences.spaceQuickLookEnabled {
+            list.append("space peek")
+        }
+        list.append(FeaturePreferences.arrowKeySnappingEnabled ? "←/→ snap" : "←/→ select")
+        if FeaturePreferences.pinShortcutEnabled {
+            list.append("P pin")
+        }
+        if FeaturePreferences.displayMoveShortcutEnabled {
+            list.append("D display")
+        }
+        list.append("W close")
+        return list
     }
 
     /// Sizes and centres the panel over the screen under the cursor. Must run
@@ -424,7 +431,8 @@ final class SwitcherController {
         guard index != selectedIndex else { return }
         selectedIndex = index
         view.setSelection(index, animated: animated)
-        if quickLook.isVisible {
+        cancelDwellPreview()
+        if quickLook.isVisible && quickLookPinnedBySpace {
             let screen = screenUnderCursor()
             quickLook.update(
                 for: visibleWindows[selectedIndex],
@@ -433,6 +441,9 @@ final class SwitcherController {
                 switcherFrame: panel.frame
             )
         } else {
+            if quickLook.isVisible {
+                quickLook.hideImmediately()
+            }
             scheduleDwellPreview()
         }
     }
@@ -584,7 +595,7 @@ final class SwitcherController {
         WindowActivator.activate(target)
 
         // 2. If multi-monitor summon is enabled, move the window to active monitor
-        let followActive = UserDefaults.standard.bool(forKey: "TabStation.followActiveDisplay")
+        let followActive = GeneralPreferences.followActiveDisplay
         if followActive && NSScreen.screens.count > 1 {
             let winScreen = WindowGridManager.screenContaining(window: target)
             if winScreen != activeScreen {
@@ -597,6 +608,9 @@ final class SwitcherController {
     /// while leaving state intact for `commit()` right after on the main queue.
     func hidePanelImmediately() {
         cancelDwellPreview()
+        transientNoticeWorkItem?.cancel()
+        transientNoticeWorkItem = nil
+        quickLookPinnedBySpace = false
         guard isVisible, !isAnimatingOut else { return }
         WindowSnapPanel.shared.closeAnimated()
         quickLook.hideImmediately()
@@ -614,6 +628,9 @@ final class SwitcherController {
 
     private func hide(instant: Bool = true) {
         cancelDwellPreview()
+        transientNoticeWorkItem?.cancel()
+        transientNoticeWorkItem = nil
+        quickLookPinnedBySpace = false
         stopOutsideClickMonitoring()
         WindowSnapPanel.shared.closeAnimated()
         if instant || DisplayStyle.current == .iconsOnly {
@@ -657,9 +674,11 @@ final class SwitcherController {
     // MARK: - Workstation Actions
 
     private func toggleQuickLook() {
+        guard FeaturePreferences.spaceQuickLookEnabled else { return }
         cancelDwellPreview()
         guard selectedIndex >= 0, selectedIndex < visibleWindows.count else { return }
         let target = visibleWindows[selectedIndex]
+        quickLookPinnedBySpace = !quickLook.isVisible
         quickLook.toggle(
             for: target,
             on: screenUnderCursor(),
@@ -708,11 +727,21 @@ final class SwitcherController {
     }
 
     private func showTransientNotice(_ text: String) {
-        view.notices = [text]
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in
+        transientNoticeWorkItem?.cancel()
+        setNotices([text])
+        let work = DispatchWorkItem { [weak self] in
             guard let self, self.isVisible else { return }
-            self.view.notices = self.makeNotice()
+            self.setNotices(self.makeNotice())
         }
+        transientNoticeWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5, execute: work)
+    }
+
+    private func setNotices(_ list: [String]) {
+        view.notices = list
+        guard isVisible else { return }
+        layoutPanel(on: screenUnderCursor())
+        view.layoutSubtreeIfNeeded()
     }
 
     // MARK: - Screens
