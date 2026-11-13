@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TabStation — Next-Gen macOS Window Switcher &amp; Workspace Manager</title>
+  <meta name="description" content="TabStation is a high-performance native macOS window switcher built in pure Swift &amp; AppKit. Live ScreenCaptureKit 60fps Retina thumbnails, browser tab switching, interactive Picture-in-Picture, and keyboard window tiling.">
+  <meta name="keywords" content="macOS window switcher, AltTab alternative mac, Command Tab replacement, ScreenCaptureKit, mac window manager, picture in picture mac, switch browser tabs mac, swift appkit macos, native mac switcher">
+  <meta name="author" content="TabStation">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#050508">
+  <link rel="canonical" href="https://tabstation.app/">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/app-icon.png">
+  <link rel="apple-touch-icon" href="assets/app-icon.png">
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="TabStation — The Window Switcher macOS Was Destined to Have">
+  <meta property="og:description" content="Pure Swift + AppKit. Live Retina thumbnails, direct browser tab jumping, interactive Picture-in-Picture with mouse forwarding, and keyboard window tiling.">
+  <meta property="og:image" content="https://tabstation.app/assets/switcher.png">
+  <meta property="og:url" content="https://tabstation.app/">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TabStation — Native macOS Window Switcher">
+  <meta name="twitter:description" content="ScreenCaptureKit 60fps live thumbnails, browser tab navigation, interactive floating PiP, and instant window tiling for macOS Sonoma &amp; Sequoia.">
+  <meta name="twitter:image" content="https://tabstation.app/assets/switcher.png">
+
+  <!-- Schema.org JSON-LD Structured Data for High-Ranking Rich Snippets -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "TabStation",
+        "operatingSystem": "macOS 14.0 or later",
+        "applicationCategory": "ProductivityApplication",
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "100% Free & Open Source (MIT License)",
+            "price": "0.00",
+            "priceCurrency": "USD",
+            "description": "Entirely free and open source forever under the MIT License with zero locked features, zero paywalls, and zero telemetry."
+          }
+        ],
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.95",
+          "ratingCount": "248"
+        },
+        "description": "Native macOS window switcher built with Swift and AppKit. Live ScreenCaptureKit Retina thumbnails, browser tab switching, interactive Picture-in-Picture, and keyboard window tiling. 100% Free & Open Source under MIT."
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How does TabStation differ from AltTab for macOS?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "While AltTab is a respected utility, TabStation provides next-generation capabilities that no other switcher offers: deep browser tab traversal across Chrome, Safari, Edge, and Arc; floating interactive Picture-in-Picture with real Quartz mouse click and scroll forwarding; instant Spacebar Quick Look; integrated multi-ratio keyboard window tiling; and a modern ScreenCaptureKit 60fps rendering engine built in pure Swift."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is TabStation completely free and open source?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes! TabStation is 100% free and open source under the MIT License. Every superpower—browser tab navigation, interactive Picture-in-Picture, Spacebar Quick Look, and window tiling—is completely unlocked for everyone forever with zero paywalls and zero subscriptions."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does TabStation require Accessibility and Screen Recording permissions?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Accessibility allows TabStation to intercept your custom trigger modifier via a low-level CGEventTap and accurately raise specific windows using AXUIElement. Screen Recording permission enables macOS ScreenCaptureKit to generate crystal-clear, hardware-accelerated Retina thumbnails of open windows."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does TabStation phone home or collect telemetry?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Zero telemetry. TabStation opens zero network sockets, contains zero third-party analytics libraries, and runs completely offline on your Mac. 100% of your data stays on your machine."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ========================================================================
+       Global Navigation
+       ======================================================================== -->
+  <header class="site-header">
+    <div class="container nav-container">
+      <a href="#" class="nav-brand">
+        <img src="assets/app-icon.png" alt="TabStation Logo">
+        <span>TabStation</span>
+        <span class="nav-badge">v1.2 Open Source</span>
+      </a>
+
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="#why-tabstation">Why TabStation</a></li>
+          <li><a href="#interactive-sandbox">Interactive Demo</a></li>
+          <li><a href="#comparison">Comparison</a></li>
+          <li><a href="#open-source">Open Source</a></li>
+          <li><a href="#shortcuts">Shortcuts</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="https://github.com/chencai/tabstation" target="_blank" rel="noopener" class="btn-nav-gh" title="GitHub Repository">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+          </svg>
+        </a>
+        <a href="#download" class="btn-nav-download">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Get Free</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       Hero Section
+       ======================================================================== -->
+  <section class="hero-section">
+    <div class="container hero-content">
+      <div class="eyebrow">
+        <span>✦ Pure Swift + AppKit</span>
+        <span>•</span>
+        <span>Zero Electron</span>
+        <span>•</span>
+        <span>ScreenCaptureKit 60fps</span>
+      </div>
+
+      <h1 class="headline-hero">
+        The window switcher macOS was destined to have.
+      </h1>
+
+      <p class="subhead">
+        Apple’s ⌘Tab was conceived in 1984 for whole applications. Today, our real work spans dozens of windows, tabs, and displays. TabStation brings live Retina thumbnails, direct browser tab jumping, interactive Picture-in-Picture, and keyboard tiling into one seamless, tactile breath.
+      </p>
+
+      <div class="hero-cta-group">
+        <a href="#download" class="btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Download for macOS</span>
+        </a>
+
+        <a href="#interactive-sandbox" class="btn-secondary">
+          <span>Try Interactive Sandbox</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </a>
+      </div>
+
+      <div>
+        <div class="hero-terminal-pill">
+          <span>$</span>
+          <span class="terminal-cmd">brew install --cask tabstation</span>
+          <button class="copy-btn" data-copy="brew install --cask tabstation" title="Copy command">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="hero-subspecs">
+        <span>macOS 14.0 Sonoma &amp; 15.0+ Sequoia</span>
+        <span>•</span>
+        <span>Universal Binary (Apple Silicon M-Series &amp; Intel)</span>
+      </div>
+    </div>
+
+    <!-- Hero Glass Stage -->
+    <div class="container hero-stage-wrapper">
+      <div class="hero-stage-glow"></div>
+
+      <div class="hero-stage-card">
+        <div class="stage-mac-bar">
+          <div class="traffic-lights">
+            <div class="traffic-light red"></div>
+            <div class="traffic-light yellow"></div>
+            <div class="traffic-light green"></div>
+          </div>
+          <div class="stage-title">TabStation HUD — Active Option+Tab Strip</div>
+          <div class="stage-status-badge">
+            <span class="stage-status-dot"></span>
+            <span>ScreenCaptureKit 60fps</span>
+          </div>
+        </div>
+
+        <div class="hero-image-container">
+          <img src="assets/switcher.png" alt="TabStation Native macOS Switcher HUD">
+
+          <!-- Overlaid Pill Callouts -->
+          <div class="hero-floating-pill pill-left">
+            <div class="pill-icon">⌥`</div>
+            <div>
+              <div style="color: #fff; font-size: 0.8rem; font-weight: 600;">Same-App Window Cycle</div>
+              <div style="color: var(--text-secondary); font-size: 0.72rem;">Isolate Xcode or Browser windows</div>
+            </div>
+          </div>
+
+          <div class="hero-floating-pill pill-right">
+            <div class="pill-icon">P</div>
+            <div>
+              <div style="color: #fff; font-size: 0.8rem; font-weight: 600;">Floating PiP &amp; Mouse Pass</div>
+              <div style="color: var(--text-secondary); font-size: 0.72rem;">Interactive Quartz click-forwarding</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       Section: Why TabStation / What We Can Do That Others Cannot
+       ======================================================================== -->
+  <section id="why-tabstation" class="why-section">
+    <div id="capabilities" style="position: relative; top: -80px;"></div>
+    <div class="container">
+      <div class="section-header">
+        <div class="eyebrow">The Competitive Edge</div>
+        <h2 class="headline-section">
+          Why we are good.<br>What we do that others cannot.
+        </h2>
+        <p class="subhead">
+          We did not merely rebuild AltTab or skin a legacy window picker. We solved the structural shortcomings of the macOS WindowServer and built capabilities unavailable in any other utility on Earth.
+        </p>
+      </div>
+
+      <!-- Bento Grid of Key Advantages -->
+      <div class="bento-grid">
+
+        <!-- Card 1: Browser Tab Traversal (Span 8) -->
+        <div class="bento-card bento-span-8">
+          <div>
+            <div class="bento-tag">Unprecedented Capability</div>
+            <h3 class="bento-title">Deep Browser Tab Traversal</h3>
+            <div class="bento-comparison-badge">
+              <span>✕ AltTab &amp; ⌘Tab: Treat browser as 1 opaque block</span>
+              <span>•</span>
+              <span>✓ TabStation: Direct tab-level jumping</span>
+            </div>
+            <p class="bento-desc">
+              Every other switcher sees Google Chrome or Safari as a single window. If you have 40 tabs open, you switch to the browser and then waste ten seconds scanning tiny tab strips. TabStation hooks directly into the browser runtimes of Chrome, Safari, Edge, Arc, and Brave to surface specific web pages, Figma boards, and GitHub PRs right alongside your native windows.
+            </p>
+          </div>
+
+          <div class="bento-visual">
+            <div class="browser-tab-simulation">
+              <div class="browser-bar">
+                <span>⚡ Live Browser Tabs discovered across Chrome, Safari &amp; Arc:</span>
+              </div>
+              <div class="tab-list-mock">
+                <div class="mock-tab-item active">
+                  <img src="https://cdn.simpleicons.org/googlechrome/4285f4" class="tab-icon" alt="Chrome">
+                  <div>
+                    <strong style="color: #fff; font-size: 0.75rem;">GitHub PR #104</strong>
+                    <div style="color: var(--text-tertiary); font-size: 0.68rem;">Arc Browser • 3m ago</div>
+                  </div>
+                </div>
+                <div class="mock-tab-item">
+                  <img src="https://cdn.simpleicons.org/safari/006cff" class="tab-icon" alt="Safari">
+                  <div>
+                    <strong style="color: #fff; font-size: 0.75rem;">Stripe Dashboard</strong>
+                    <div style="color: var(--text-tertiary); font-size: 0.68rem;">Safari • Live</div>
+                  </div>
+                </div>
+                <div class="mock-tab-item">
+                  <img src="https://cdn.simpleicons.org/figma/f24e1e" class="tab-icon" alt="Figma">
+                  <div>
+                    <strong style="color: #fff; font-size: 0.75rem;">Design System 2026</strong>
+                    <div style="color: var(--text-tertiary); font-size: 0.68rem;">Chrome • 5m ago</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Interactive PiP with Event Forwarding (Span 4) -->
+        <div class="bento-card bento-span-4">
+          <div>
+            <div class="bento-tag">World First</div>
+            <h3 class="bento-title">Floating PiP + Quartz Event Forwarding</h3>
+            <p class="bento-desc">
+              Press <span class="key-badge">P</span> to float any window on top. Not just a static preview: our custom Quartz event tap forwards real clicks and scroll events straight to the background app!
+            </p>
+          </div>
+
+          <div class="bento-visual">
+            <div class="pip-simulation">
+              <div class="pip-code-background">
+                // Background Xcode Window<br>
+                func executeBuild() {<br>
+                &nbsp;&nbsp;guard state.isReady else { return }<br>
+                &nbsp;&nbsp;logger.info("Building...")<br>
+                }
+              </div>
+
+              <div class="pip-floating-hud">
+                <div class="pip-hud-titlebar">
+                  <span>Terminal — Logs</span>
+                  <div class="pip-hud-controls">
+                    <span class="pip-icon-btn" title="Ghost mode">👻</span>
+                    <span class="pip-icon-btn" title="Opacity">◐</span>
+                    <span class="pip-icon-btn" title="Close">✕</span>
+                  </div>
+                </div>
+                <div class="pip-hud-preview">
+                  <div class="pip-ripple-indicator"></div>
+                  <span>Click-Forwarding Active</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Spacebar Quick Look (Span 4) -->
+        <div class="bento-card bento-span-4">
+          <div>
+            <div class="bento-tag">Instant Clarity</div>
+            <h3 class="bento-title">Spacebar Quick Look</h3>
+            <p class="bento-desc">
+              Why squint at small thumbnails? Tap <span class="key-badge">Space</span> at any moment during switching. An enlarged, crystal-clear HUD panel appears instantly without committing focus.
+            </p>
+          </div>
+
+          <div class="bento-visual">
+            <div class="quicklook-preview-box">
+              <div class="quicklook-header">
+                <strong style="color: #fff;">Quick Look HUD</strong>
+                <span class="quicklook-badge">Spacebar</span>
+              </div>
+              <div class="quicklook-body">
+                class SwitcherController: NSViewController {<br>
+                &nbsp;&nbsp;let panel = SwitcherPanel()<br>
+                &nbsp;&nbsp;var isVisible: Bool = true<br>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Built-in Keyboard Window Tiling (Span 4) -->
+        <div class="bento-card bento-span-4">
+          <div>
+            <div class="bento-tag">Zero Additional Utilities</div>
+            <h3 class="bento-title">Zero-Friction Grid Tiling</h3>
+            <p class="bento-desc">
+              Stop reaching for Rectangle, Magnet, or Raycast just to arrange windows. Tap <span class="key-badge">←</span> or <span class="key-badge">→</span> to snap halves. Tap again to cycle 1/3 and 2/3 ratios.
+            </p>
+          </div>
+
+          <div class="bento-visual">
+            <div class="snap-demo-strip">
+              <div class="snap-tile-box left-half" title="Left Half (1/2)"><div class="pane-fill"></div></div>
+              <div class="snap-tile-box third-left" title="Left Third (1/3)"><div class="pane-fill"></div></div>
+              <div class="snap-tile-box center-pane" title="Center (70%)"><div class="pane-fill"></div></div>
+              <div class="snap-tile-box right-half" title="Right Half (1/2)"><div class="pane-fill"></div></div>
+              <div class="snap-tile-box maximize" title="Maximize"><div class="pane-fill"></div></div>
+            </div>
+            <div style="text-align: center; font-size: 0.72rem; color: var(--text-tertiary); margin-top: 8px;">
+              Consecutive arrow taps automatically cycle 1/2 ➔ 1/3 ➔ 2/3
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5: Multi-Display Teleportation (Span 4) -->
+        <div class="bento-card bento-span-4">
+          <div>
+            <div class="bento-tag">Multi-Monitor Perfection</div>
+            <h3 class="bento-title">Display Dispatcher (Key: D)</h3>
+            <p class="bento-desc">
+              Have dual Studio Displays or a MacBook connected to an ultrawide? Press <span class="key-badge">D</span> while on any window to warp it to your next screen with proportional geometry recalculation.
+            </p>
+          </div>
+
+          <div class="bento-visual" style="text-align: center; padding: 1.5rem 1rem;">
+            <div style="font-size: 1.75rem; margin-bottom: 6px;">🖥️ ➔ 🖥️</div>
+            <div style="font-size: 0.8125rem; font-weight: 600; color: #fff;">1-Key Display Teleport</div>
+            <div style="font-size: 0.72rem; color: var(--text-tertiary);">No dragging across giant desktops</div>
+          </div>
+        </div>
+
+        <!-- Card 6: Crash-Safe SkyLight ⌘Tab Takeover (Span 12) -->
+        <div class="bento-card bento-span-12">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+            <div style="max-width: 680px;">
+              <div class="bento-tag">Architectural Masterclass</div>
+              <h3 class="bento-title">Crash-Safe SkyLight WindowServer ⌘Tab Override</h3>
+              <p class="bento-desc">
+                Many users want to replace the macOS default ⌘Tab completely, but traditional utilities use dangerous hacks that can leave your system switcher permanently broken if the app terminates unexpectedly. TabStation communicates directly with SkyLight WindowServer SPI via <code>CGSSetSymbolicHotKeyEnabled</code>, accompanied by POSIX signal handlers (SIGINT, SIGTERM, SIGHUP) that restore Apple's native switcher instantaneously upon termination or quit.
+              </p>
+            </div>
+            <div style="background: rgba(48, 209, 88, 0.1); border: 1px solid rgba(48, 209, 88, 0.25); border-radius: 12px; padding: 16px 20px; font-size: 0.84rem; color: #b7ffcd;">
+              <strong style="display: block; margin-bottom: 4px; color: #fff;">100% Fail-Safe Guarantee</strong>
+              <span>If TabStation is closed, native ⌘Tab is restored before the next frame is drawn.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       Section: Interactive Switcher Sandbox
+       ======================================================================== -->
+  <section id="interactive-sandbox" class="sandbox-section">
+    <div class="container sandbox-container">
+      <div class="section-header">
+        <div class="eyebrow">Interactive Simulator</div>
+        <h2 class="headline-section">
+          Feel the speed.<br>Right here in your browser.
+        </h2>
+        <p class="subhead">
+          Test the exact physics and gestures of TabStation. Use your keyboard (<span class="key-badge">Alt</span>+<span class="key-badge">Tab</span>, Arrow keys, <span class="key-badge">Space</span>, <span class="key-badge">P</span>) or click the controls below.
+        </p>
+      </div>
+
+      <!-- The Sandbox Floating HUD -->
+      <div class="sandbox-hud-wrapper">
+        <div class="sandbox-instruction-bar">
+          <div class="instruction-text">
+            <span>Live HUD Simulation</span> — Press <span class="key-badge">Tab</span> or <span class="key-badge">→</span> to cycle, <span class="key-badge">Space</span> for Quick Look, <span class="key-badge">P</span> for PiP.
+          </div>
+          <div id="sandbox-feedback-text" style="font-size: 0.78rem; font-weight: 500; color: var(--accent-cyan);">
+            Ready. Press Tab to cycle.
+          </div>
+        </div>
+
+        <div id="sandbox-snap-notice" style="display: none; padding: 8px 14px; background: rgba(41, 151, 255, 0.2); border: 1px solid var(--accent-blue); border-radius: 8px; font-size: 0.8125rem; font-weight: 600; text-align: center; color: #fff; margin-bottom: 12px;"></div>
+
+        <!-- The Switcher Strip -->
+        <div class="sandbox-switcher-strip">
+
+          <!-- Card 0: Xcode -->
+          <div class="switcher-card active" data-index="0">
+            <div class="card-action-capsule">
+              <button class="action-pill-btn snap-left" title="Snap Left (←)">◧</button>
+              <button class="action-pill-btn snap-right" title="Snap Right (→)">◨</button>
+              <button class="action-pill-btn close" title="Close Window (W)">✕</button>
+            </div>
+            <div class="card-thumbnail-preview">
+              <img src="assets/app-icon.png" class="card-app-icon-badge" alt="Xcode">
+              <div style="font-family: var(--font-mono); font-size: 0.65rem; color: #9cdcfe; line-height: 1.3; padding: 6px;">
+                final class PreferencesWindowController...<br>
+                let panel = SwitcherPanel()<br>
+                panel.level = .floating
+              </div>
+            </div>
+            <div class="card-meta-row">
+              <div class="card-title">PreferencesWindowController.swift</div>
+              <div class="card-app-name">Xcode • TabStation Project</div>
+            </div>
+          </div>
+
+          <!-- Card 1: Chrome / GitHub -->
+          <div class="switcher-card" data-index="1">
+            <div class="card-action-capsule">
+              <button class="action-pill-btn snap-left" title="Snap Left (←)">◧</button>
+              <button class="action-pill-btn snap-right" title="Snap Right (→)">◨</button>
+              <button class="action-pill-btn close" title="Close Window (W)">✕</button>
+            </div>
+            <div class="card-thumbnail-preview">
+              <img src="https://cdn.simpleicons.org/googlechrome/4285f4" class="card-app-icon-badge" alt="Chrome">
+              <div style="text-align: center; padding: 8px;">
+                <div style="font-size: 0.72rem; font-weight: 600; color: #fff;">chencai / tabstation</div>
+                <div style="font-size: 0.62rem; color: #8b949e; margin-top: 4px;">Pull Request #42: ScreenCaptureKit pipeline</div>
+              </div>
+            </div>
+            <div class="card-meta-row">
+              <div class="card-title">chencai/tabstation: Pull Request #42</div>
+              <div class="card-app-name">Google Chrome • GitHub</div>
+            </div>
+          </div>
+
+          <!-- Card 2: Terminal -->
+          <div class="switcher-card" data-index="2">
+            <div class="card-action-capsule">
+              <button class="action-pill-btn snap-left" title="Snap Left (←)">◧</button>
+              <button class="action-pill-btn snap-right" title="Snap Right (→)">◨</button>
+              <button class="action-pill-btn close" title="Close Window (W)">✕</button>
+            </div>
+            <div class="card-thumbnail-preview">
+              <img src="https://cdn.simpleicons.org/apple/ffffff" class="card-app-icon-badge" alt="Terminal">
+              <div style="font-family: var(--font-mono); font-size: 0.62rem; color: #30d158; padding: 6px;">
+                $ ./build-app.sh<br>
+                [✓] SwiftPM compile: 1.2s<br>
+                [✓] Codesign ad-hoc ok<br>
+                dist/TabStation.app
+              </div>
+            </div>
+            <div class="card-meta-row">
+              <div class="card-title">zsh — ./build-app.sh release</div>
+              <div class="card-app-name">Terminal • TabStation Build</div>
+            </div>
+          </div>
+
+          <!-- Card 3: Figma -->
+          <div class="switcher-card" data-index="3">
+            <div class="card-action-capsule">
+              <button class="action-pill-btn snap-left" title="Snap Left (←)">◧</button>
+              <button class="action-pill-btn snap-right" title="Snap Right (→)">◨</button>
+              <button class="action-pill-btn close" title="Close Window (W)">✕</button>
+            </div>
+            <div class="card-thumbnail-preview">
+              <img src="https://cdn.simpleicons.org/figma/f24e1e" class="card-app-icon-badge" alt="Figma">
+              <div style="text-align: center; padding: 8px;">
+                <div style="font-size: 0.72rem; font-weight: 600; color: #bf5af2;">macOS 15 Design Tokens</div>
+                <div style="font-size: 0.62rem; color: var(--text-tertiary); margin-top: 4px;">Specular Borders &amp; Spring Physics</div>
+              </div>
+            </div>
+            <div class="card-meta-row">
+              <div class="card-title">TabStation HUD Redesign</div>
+              <div class="card-app-name">Figma • Architecture Drafts</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Sandbox Footer / Hotkey Legend -->
+        <div class="sandbox-hud-footer">
+          <div class="legend-keys">
+            <div class="legend-item"><span class="key-badge">⌥Tab</span> <span>Next Window</span></div>
+            <div class="legend-item"><span class="key-badge">⌥`</span> <span>Same App</span></div>
+            <div class="legend-item"><span class="key-badge">Space</span> <span>Quick Look</span></div>
+            <div class="legend-item"><span class="key-badge">P</span> <span>PiP Pin</span></div>
+            <div class="legend-item"><span class="key-badge">W</span> <span>Close</span></div>
+          </div>
+          <div>Release modifier to activate</div>
+        </div>
+      </div>
+
+      <!-- Quick Look Floating Modal Simulation -->
+      <div id="quicklook-modal" style="display: none; margin: -1rem auto 2rem; max-width: 600px; background: rgba(18, 18, 26, 0.95); backdrop-filter: blur(40px); border: 1px solid var(--border-bright); border-radius: var(--radius-card); padding: 18px; box-shadow: 0 30px 80px rgba(0,0,0,0.8);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+          <div>
+            <div id="ql-title" style="font-weight: 600; font-size: 0.9rem; color: #fff;">PreferencesWindowController.swift</div>
+            <div id="ql-app" style="font-size: 0.72rem; color: var(--accent-blue);">Xcode • Active Window</div>
+          </div>
+          <button id="ql-close-btn" style="color: var(--text-tertiary); font-size: 0.8rem; padding: 4px 8px; border-radius: 4px; background: rgba(255,255,255,0.08);">✕ Close (Esc)</button>
+        </div>
+        <pre id="ql-code" style="font-family: var(--font-mono); font-size: 0.78rem; color: #e6edf3; background: #0b0c10; padding: 14px; border-radius: 8px; overflow-x: auto; line-height: 1.5;"></pre>
+      </div>
+
+      <!-- Floating PiP Demo Simulator -->
+      <div id="pip-floating-demo" style="display: none; position: fixed; bottom: 30px; right: 30px; z-index: 9999; width: 280px; box-shadow: 0 24px 60px rgba(0,0,0,0.85);">
+        <div id="pip-hud-window" style="background: rgba(22, 22, 30, 0.92); backdrop-filter: blur(28px); border: 1px solid var(--border-bright); border-radius: 12px; overflow: hidden; transition: opacity 0.2s ease;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(0,0,0,0.5); font-size: 0.75rem;">
+            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; font-weight: 600;" id="pip-title">Pinned Window</div>
+            <div style="display: flex; gap: 4px;">
+              <button id="pip-ghost-btn" class="pip-icon-btn" title="Toggle Ghost Mode (Click-Through)">👻</button>
+              <button id="pip-opacity-btn" class="pip-icon-btn" title="Cycle Opacity">◐</button>
+              <button id="pip-close-btn" class="pip-icon-btn" title="Close PiP">✕</button>
+            </div>
+          </div>
+          <div style="padding: 16px; text-align: center; background: #0c0d12;">
+            <div style="font-size: 0.72rem; color: var(--accent-cyan); margin-bottom: 4px;">● Universal Event Forwarding</div>
+            <div id="pip-app" style="font-size: 0.8125rem; font-weight: 600; color: #fff;">Xcode Live Mirror</div>
+            <div style="font-size: 0.68rem; color: var(--text-tertiary); margin-top: 6px;">Mouse clicks &amp; scrolls pass directly through</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manual On-Screen Controls -->
+      <div class="sandbox-controls-bar">
+        <button id="demo-btn-prev" class="interactive-demo-btn">
+          <span>← Previous Window</span>
+        </button>
+        <button id="demo-btn-next" class="interactive-demo-btn">
+          <span>Next Window →</span>
+        </button>
+        <button id="demo-btn-quicklook" class="interactive-demo-btn">
+          <span>Toggle Spacebar Quick Look</span>
+        </button>
+        <button id="demo-btn-pip" class="interactive-demo-btn">
+          <span>Toggle Floating PiP (P)</span>
+        </button>
+        <button id="demo-btn-snap-left" class="interactive-demo-btn">
+          <span>Snap Left Half (←)</span>
+        </button>
+        <button id="demo-btn-snap-right" class="interactive-demo-btn">
+          <span>Snap Right Half (→)</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       Section: Comparison Matrix (TabStation vs. Others)
+       ======================================================================== -->
+  <section id="comparison" class="comparison-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="eyebrow">Objective Benchmark</div>
+        <h2 class="headline-section">
+          How TabStation compares.
+        </h2>
+        <p class="subhead">
+          See why demanding engineers, designers, and power users choose TabStation over legacy tools and Apple’s built-in switcher.
+        </p>
+      </div>
+
+      <div class="comparison-table-wrapper">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th class="col-feature">Multitasking Capability</th>
+              <th class="col-competitor">Apple ⌘Tab (macOS Native)</th>
+              <th class="col-competitor">Standard AltTab Utilities</th>
+              <th class="col-highlight">TabStation (Pure Swift)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="feature-title-cell">
+                <strong>Individual Window Selection</strong>
+                <span>Switch directly to a specific window rather than just the parent application</span>
+              </td>
+              <td><span class="cross-icon">✕ App-level only</span></td>
+              <td><span class="check-icon">✓ Yes</span></td>
+              <td class="col-highlight"><span class="check-icon">✓ Yes <span class="tag-highlight">Instant AXUI</span></span></td>
+            </tr>
+
+            <tr>
+              <td class="feature-title-cell">
+                <strong>Modern ScreenCaptureKit Engine</strong>
+                <span>Hardware-accelerated 60fps capture without deprecated CoreGraphics APIs</span>
+              </td>
+              <td><span class="cross-icon">✕ No Thumbnails</span></td>
+              <td><span class="cross-icon">✕ Legacy CGWindowList</span></td>
+              <td class="col-highlight"><span class="check-icon">✓ ScreenCaptureKit <span class="tag-highlight">Retina 2x</span></span></td>
+            </tr>
+
+            <tr>
+              <td class="feature-title-cell">
+                <strong>Captures Fully Covered Windows</strong>
+                <span>Renders live window contents even when 100% occluded by other full-screen apps</span>
+              </td>
+              <td><span class="cross-icon">✕ None</span></td>
+              <td><span class="cross-icon">✕ Partial / Stale</span></td>
+              <td class="col-highlight"><span class="check-icon">✓ 100% Guaranteed</span></td>
+            </tr>
+
+            <tr>
+              <td class="feature-title-cell">
+                <strong>Deep Browser Tab Switching</strong>
+                <span>Surfaces individual browser tabs from Chrome, Safari, Edge, Arc &amp; Brave</span>
+              </td>
+              <td><span class="cross-icon">✕ Not supported</span></td>
+              <td><span class="cross-icon">✕ Not supported</span></td>
+              <td class="col-highlight"><span class="check-icon">✓ Native Tab Hooks <span class="tag-highlight">Exclusive</span></span></td>
+            </tr>
+
+            <tr>
+              <td class="feature-title-cell">
+                <strong>Floating Picture-in-Picture &amp; Mouse Pass</strong>
+                <span>Pin any window floating on top with interactive Quartz click &amp; scroll forwarding</span>
+              </td>
+              <td><span class="cross-icon">✕ Video only</span></td>
+              <td><span class="cross-icon">✕ Not supported</span></td>
+              <td class="col-highlight"><span class="check-icon">✓ PiP + Ghost Mode <span class="tag-highlight">Exclusive</span></span></td>
+            </tr>
+
+            <tr>
+              <td class="feature-title-cell">
+                <strong>Spacebar Quick Look Enlargement</strong>
+                <span>Instant high-res HUD inspection of documents, terminals, and code without switching</span>
+              </td>
+              <td><span class="cross-icon">✕ Not supported</span></td>
+              <td><span class="cross-icon">✕ Not supported</span></td>
+              <td class="col-highlight"><span class="check-icon">✓ Spacebar Quick Look</span></td>
+            </tr>
+
+            <tr>
+              <td class="feature-title-cell">
+                <strong>Integrated Window Grid Snapping</strong>
+                <span>Tiling halves, thirds, quarters, and center without needing Rectangle or Magnet</span>
+              </td>
+              <td><span class="cross-icon">✕ Manual Drag</span></td>
+              <td><span class="cross-icon">✕ Not supported</span></td>
+              <td class="col-highlight"><span class="check-icon">✓ Arrow Cycle 1/2→1/3→2/3</span></td>
+            </tr>
+
+            <tr>
+              <td class="feature-title-cell">
+                <strong>Multi-Display Teleport (Key: D)</strong>
+                <span>Throw the active window to an external display in a single keystroke</span>
+              </td>
+              <td><span class="cross-icon">✕ Drag across screens</span></td>
+              <td><span class="cross-icon">✕ Not supported</span></td>
+              <td class="col-highlight"><span class="check-icon">✓ 1-Key Multi-Monitor</span></td>
+            </tr>
+
+            <tr>
+              <td class="feature-title-cell">
+                <strong>Zero Electron Bloat &amp; Memory Footprint</strong>
+                <span>Pure AppKit binary with negligible RAM and 0% CPU consumption</span>
+              </td>
+              <td><span class="check-icon">✓ ~15MB (WindowServer)</span></td>
+              <td><span class="cross-icon">~120MB - 300MB</span></td>
+              <td class="col-highlight"><span class="check-icon">✓ ~28MB Swift Native</span></td>
+            </tr>
+
+            <tr>
+              <td class="feature-title-cell">
+                <strong>Telemetry &amp; Network Requests</strong>
+                <span>100% offline security, zero analytics beacons, zero crash reporting sockets</span>
+              </td>
+              <td><span class="cross-icon">Apple System Telemetry</span></td>
+              <td><span class="cross-icon">Varies</span></td>
+              <td class="col-highlight"><span class="check-icon">✓ 0 Sockets • 100% Private</span></td>
+            </tr>
+
+            <tr>
+              <td class="feature-title-cell">
+                <strong>Safe ⌘Tab Interception with Auto-Restore</strong>
+                <span>SkyLight private SPI with crash-proof POSIX signal restoration</span>
+              </td>
+              <td><span>Default</span></td>
+              <td><span class="cross-icon">Manual Reset</span></td>
+              <td class="col-highlight"><span class="check-icon">✓ Crash-Safe Fail-Safe</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       Section: Engineered for Perfection / Engine Specs
+       ======================================================================== -->
+  <section id="specs" class="specs-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="eyebrow">System Architecture</div>
+        <h2 class="headline-section">
+          Engineered for raw speed.
+        </h2>
+        <p class="subhead">
+          TabStation is crafted with obsessive discipline. No web frameworks, no bloated bundles, and zero compromises on battery life.
+        </p>
+      </div>
+
+      <div class="specs-grid">
+        <div class="spec-card">
+          <div class="spec-stat">0.04s</div>
+          <div class="spec-label">Instant Cold Start</div>
+          <p class="spec-desc">
+            Compiled directly to machine code via SwiftPM. TabStation loads its entire window hierarchy and starts listening for chords in milliseconds.
+          </p>
+        </div>
+
+        <div class="spec-card">
+          <div class="spec-stat">28 MB</div>
+          <div class="spec-label">Featherweight Memory</div>
+          <p class="spec-desc">
+            While Electron-based tools consume 400MB+ just to sit idle, TabStation runs on a modest ~28MB footprint, preserving your memory for Xcode and Docker.
+          </p>
+        </div>
+
+        <div class="spec-card">
+          <div class="spec-stat">0% CPU</div>
+          <div class="spec-label">Zero Idle Drain</div>
+          <p class="spec-desc">
+            Event-driven architecture based on <code>CGEventTap</code> and ScreenCaptureKit actors. While you work, TabStation sleeps completely, causing zero battery drain.
+          </p>
+        </div>
+
+        <div class="spec-card">
+          <div class="spec-stat">4x</div>
+          <div class="spec-label">Concurrent Capture</div>
+          <p class="spec-desc">
+            Thumbnails render up to 4 windows concurrently using Apple Silicon Metal pipelines, sized to the exact on-screen cell at 2x Retina resolution.
+          </p>
+        </div>
+
+        <div class="spec-card">
+          <div class="spec-stat">0 Sockets</div>
+          <div class="spec-label">Air-Gapped Privacy</div>
+          <p class="spec-desc">
+            TabStation contains no network libraries, no analytics SDKs, and no automatic updaters phoning home. What happens on your Mac stays on your Mac.
+          </p>
+        </div>
+
+        <div class="spec-card">
+          <div class="spec-stat">100%</div>
+          <div class="spec-label">Apple HIG Compliant</div>
+          <p class="spec-desc">
+            Conforms strictly to Apple Human Interface Guidelines: vibrant HUD materials, 22pt rounded corners, specular edge rims, and native spring physics.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       Section: Keyboard Shortcuts Reference
+       ======================================================================== -->
+  <section id="shortcuts" class="shortcuts-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="eyebrow">Intuitive Control</div>
+        <h2 class="headline-section">
+          Shortcuts designed for muscle memory.
+        </h2>
+        <p class="subhead">
+          Every command is an extension of standard macOS conventions. Customize any trigger chord inside TabStation Preferences (<span class="key-badge">⌘,</span>).
+        </p>
+      </div>
+
+      <div class="shortcuts-table-card">
+        <div class="shortcuts-grid">
+          
+          <div class="shortcut-item-row">
+            <div class="shortcut-keys">
+              <span class="key-badge">⌥</span>
+              <span class="key-badge">Tab</span>
+            </div>
+            <div class="shortcut-info">
+              <div class="shortcut-name">Next Window</div>
+              <div class="shortcut-sub">Opens switcher &amp; advances selection (+Shift for reverse)</div>
+            </div>
+          </div>
+
+          <div class="shortcut-item-row">
+            <div class="shortcut-keys">
+              <span class="key-badge">⌥</span>
+              <span class="key-badge">`</span>
+            </div>
+            <div class="shortcut-info">
+              <div class="shortcut-name">Cycle Same Application</div>
+              <div class="shortcut-sub">Isolates windows of the active app without leaving context</div>
+            </div>
+          </div>
+
+          <div class="shortcut-item-row">
+            <div class="shortcut-keys">
+              <span class="key-badge">Space</span>
+            </div>
+            <div class="shortcut-info">
+              <div class="shortcut-name">Quick Look Enlargement</div>
+              <div class="shortcut-sub">Displays full-resolution preview HUD of selected window</div>
+            </div>
+          </div>
+
+          <div class="shortcut-item-row">
+            <div class="shortcut-keys">
+              <span class="key-badge">P</span>
+            </div>
+            <div class="shortcut-info">
+              <div class="shortcut-name">Pin Picture-in-Picture</div>
+              <div class="shortcut-sub">Pins window floating on top with click &amp; scroll pass</div>
+            </div>
+          </div>
+
+          <div class="shortcut-item-row">
+            <div class="shortcut-keys">
+              <span class="key-badge">←</span>
+              <span class="key-badge">→</span>
+            </div>
+            <div class="shortcut-info">
+              <div class="shortcut-name">Cycle Split Halves &amp; Thirds</div>
+              <div class="shortcut-sub">Repeated taps cycle 1/2 ➔ 1/3 ➔ 2/3 window tiling</div>
+            </div>
+          </div>
+
+          <div class="shortcut-item-row">
+            <div class="shortcut-keys">
+              <span class="key-badge">↑</span>
+              <span class="key-badge">↓</span>
+            </div>
+            <div class="shortcut-info">
+              <div class="shortcut-name">Maximize / Center (70%)</div>
+              <div class="shortcut-sub">Instantly expand or center the target window</div>
+            </div>
+          </div>
+
+          <div class="shortcut-item-row">
+            <div class="shortcut-keys">
+              <span class="key-badge">D</span>
+            </div>
+            <div class="shortcut-info">
+              <div class="shortcut-name">Display Dispatcher</div>
+              <div class="shortcut-sub">Teleports target window to the next physical display</div>
+            </div>
+          </div>
+
+          <div class="shortcut-item-row">
+            <div class="shortcut-keys">
+              <span class="key-badge">B</span>
+            </div>
+            <div class="shortcut-info">
+              <div class="shortcut-name">Filter Browser Tabs</div>
+              <div class="shortcut-sub">Shows only discovered tabs across Chrome, Safari &amp; Arc</div>
+            </div>
+          </div>
+
+          <div class="shortcut-item-row">
+            <div class="shortcut-keys">
+              <span class="key-badge">W</span>
+              <span style="color: var(--text-tertiary); font-size: 0.75rem;">or</span>
+              <span class="key-badge">⌫</span>
+            </div>
+            <div class="shortcut-info">
+              <div class="shortcut-name">Close Window</div>
+              <div class="shortcut-sub">Closes the selected window immediately</div>
+            </div>
+          </div>
+
+          <div class="shortcut-item-row">
+            <div class="shortcut-keys">
+              <span class="key-badge">M</span>
+            </div>
+            <div class="shortcut-info">
+              <div class="shortcut-name">Minimize Window</div>
+              <div class="shortcut-sub">Stashes target window into the Dock</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       Section: 100% Free & Open Source Pledge
+       ======================================================================== -->
+  <section id="open-source" class="open-source-section">
+    <div class="container">
+      <div class="open-source-box">
+        <div class="eyebrow" style="background: rgba(48, 209, 88, 0.12); color: var(--accent-green); border-color: rgba(48, 209, 88, 0.28);">
+          <span>✦ 100% Free &amp; Open Source</span>
+          <span>•</span>
+          <span>MIT License</span>
+          <span>•</span>
+          <span>Zero Paywalls</span>
+        </div>
+
+        <h2 class="headline-section" style="max-width: 780px; margin: 0 auto 1.25rem;">
+          Crafted for people, not for profit.
+        </h2>
+
+        <p class="subhead" style="max-width: 720px; margin: 0 auto 2.5rem;">
+          Not everything in life needs to be monetized. We built TabStation to solve real frustrations with macOS window multitasking. Every single superpower—from deep browser tab traversal to interactive Picture-in-Picture—is completely free, open source, and yours forever.
+        </p>
+
+        <!-- Open Source Value Pillars -->
+        <div class="open-source-pillars-grid">
+          <div class="os-pillar-card">
+            <div class="os-pillar-icon">🔓</div>
+            <h3 class="os-pillar-title">Zero Paywalls. No Pro Tier.</h3>
+            <p class="os-pillar-desc">
+              Every feature is fully unlocked out of the box. No trial clocks, no watermark nag screens, no subscription traps, and no gated "Pro" tiers.
+            </p>
+          </div>
+
+          <div class="os-pillar-card">
+            <div class="os-pillar-icon">🛡️</div>
+            <h3 class="os-pillar-title">Air-Gapped Privacy &amp; Trust</h3>
+            <p class="os-pillar-desc">
+              Screen recording and accessibility permissions stay 100% private. Zero network sockets, zero tracking beacons. Inspect every single line of Swift code yourself.
+            </p>
+          </div>
+
+          <div class="os-pillar-card">
+            <div class="os-pillar-icon">🤝</div>
+            <h3 class="os-pillar-title">Community Driven on GitHub</h3>
+            <p class="os-pillar-desc">
+              Openly licensed under MIT. Built with love for developers, designers, and power users. Star the repo, file issues, submit PRs, or fork it freely.
+            </p>
+          </div>
+        </div>
+
+        <div class="os-cta-actions">
+          <a href="https://github.com/chencai/tabstation" target="_blank" rel="noopener" class="btn-primary" style="background: #fff; color: #000;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+            </svg>
+            <span>Star on GitHub ★</span>
+          </a>
+
+          <a href="#download" class="btn-secondary">
+            <span>Download TabStation Free</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       Section: Frequently Asked Questions (FAQ)
+       ======================================================================== -->
+  <section id="faq" class="faq-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="eyebrow">Answers &amp; Clarity</div>
+        <h2 class="headline-section">
+          Frequently asked questions.
+        </h2>
+        <p class="subhead">
+          Everything you need to know about architecture, security, permissions, and licensing.
+        </p>
+      </div>
+
+      <div class="faq-accordion-list">
+
+        <div class="faq-item">
+          <button class="faq-question-btn">
+            <span>How does TabStation differ from AltTab for Mac?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-answer">
+            <p>
+              While AltTab is a pioneer in bringing the Windows-style switcher to macOS, TabStation was built from scratch in pure Swift with Apple’s modern ScreenCaptureKit framework. TabStation delivers capabilities unavailable in AltTab: <strong>deep browser tab switching</strong> across Chrome, Safari, Edge, and Arc; <strong>floating Picture-in-Picture</strong> with universal mouse event forwarding; <strong>Spacebar Quick Look</strong> previews; <strong>integrated keyboard tiling</strong> (1/2, 1/3, 2/3 ratios); and a lightweight ~28MB footprint that matches modern macOS design tokens.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question-btn">
+            <span>Is TabStation completely free and open source?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-answer">
+            <p>
+              <strong>Yes, 100% free and open source under the MIT License.</strong> Every single superpower—including deep browser tab switching across Chrome/Safari/Arc, interactive Picture-in-Picture with mouse forwarding, Spacebar Quick Look, and keyboard window tiling—is completely unlocked for everyone forever. There are zero subscriptions, zero paywalls, zero in-app purchases, and zero ads.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question-btn">
+            <span>Why did you make TabStation entirely free instead of charging for it?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-answer">
+            <p>
+              Because not everything in software needs to be a business. We built TabStation to solve real, daily frustrations with macOS multitasking, and we believe the best tools should be accessible to every creator, developer, and thinker. It is our gift to the Mac community.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question-btn">
+            <span>How can I support or contribute to TabStation?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-answer">
+            <p>
+              The greatest way to support TabStation is to <strong>star the project on GitHub</strong>, share it with colleagues and friends, report bugs on our issue tracker, and submit pull requests. Community word-of-mouth is what powers our growth.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question-btn">
+            <span>Why does TabStation require Accessibility and Screen Recording permissions?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-answer">
+            <p>
+              macOS enforces strict sandboxing:
+              <br><br>
+              1. <strong>Accessibility Permission</strong> is required to observe your hold modifier via <code>CGEventTap</code> and to raise specific windows through Apple's <code>AXUIElement</code> APIs rather than just activating the application in front.
+              <br><br>
+              2. <strong>Screen Recording Permission</strong> is required by macOS ScreenCaptureKit to generate live window thumbnails. Without Screen Recording, TabStation falls back to large app icons. TabStation never records your screen to disk and never transmits any data over the network.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question-btn">
+            <span>How does TabStation discover tabs in Chrome, Safari, and Arc?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-answer">
+            <p>
+              TabStation queries the AppleScript scripting dictionaries of running browsers via a dedicated high-performance service. It enumerates window IDs and tab titles without injecting code or modifying browser processes. When you select a tab in TabStation, it activates the target browser window and brings that exact tab to the front.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question-btn">
+            <span>Is it safe to replace macOS native Command-Tab?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-answer">
+            <p>
+              Yes. Unlike fragile hacks, TabStation communicates with the SkyLight WindowServer via <code>CGSSetSymbolicHotKeyEnabled</code>. Crucially, TabStation registers POSIX signal handlers (SIGINT, SIGTERM, SIGHUP) and termination hooks that restore Apple’s native Command-Tab immediately if TabStation is ever quit or terminated.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question-btn">
+            <span>Does TabStation run natively on Apple Silicon (M1/M2/M3/M4)?</span>
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="faq-answer">
+            <p>
+              TabStation is compiled as a Universal 2 binary with full native support for Apple Silicon (M1, M2, M3, M4, and Pro/Max/Ultra variants) as well as Intel Macs running macOS 14 Sonoma, macOS 15 Sequoia, or later.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       Section: Download & Installation CTA
+       ======================================================================== -->
+  <section id="download" class="download-section">
+    <div class="container">
+      <div class="download-box">
+        <img src="assets/app-icon.png" class="download-icon" alt="TabStation Icon">
+        
+        <h2 class="headline-section" style="margin-bottom: 1rem;">
+          Upgrade your macOS multitasking today.
+        </h2>
+        
+        <p class="subhead" style="margin-bottom: 2.25rem;">
+          Free, open source, and built with love for power users. No subscriptions, no telemetry, no compromises.
+        </p>
+
+        <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
+          <a href="https://github.com/chencai/tabstation/releases/latest" class="btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Download TabStation v1.2</span>
+          </a>
+
+          <button class="btn-secondary btn-copy-install" data-copy="git clone https://github.com/chencai/tabstation.git &amp;&amp; cd tabstation &amp;&amp; ./build-app.sh">
+            <span>Copy Build Command</span>
+          </button>
+        </div>
+
+        <div class="download-meta">
+          <span>Version 1.2.0</span>
+          <span>•</span>
+          <span>~5 MB Bundle</span>
+          <span>•</span>
+          <span>Ad-hoc Signed</span>
+          <span>•</span>
+          <span>macOS 14.0+</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       Global Footer
+       ======================================================================== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="footer-brand-title">TabStation</div>
+          <p style="line-height: 1.6;">
+            A high-performance native macOS window switcher crafted with Swift and AppKit. Designed for developers, designers, and thinkers who demand absolute precision.
+          </p>
+        </div>
+
+        <div class="footer-links-group">
+          <div class="footer-col">
+            <h4>Product</h4>
+            <ul>
+              <li><a href="#why-tabstation">Why TabStation</a></li>
+              <li><a href="#capabilities">Features</a></li>
+              <li><a href="#interactive-sandbox">Interactive Sandbox</a></li>
+              <li><a href="#comparison">Comparison Matrix</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h4>Technology</h4>
+            <ul>
+              <li><a href="#specs">ScreenCaptureKit</a></li>
+              <li><a href="#specs">AXUIElement</a></li>
+              <li><a href="#specs">SkyLight SPI</a></li>
+              <li><a href="#specs">Zero Electron</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h4>Community</h4>
+            <ul>
+              <li><a href="https://github.com/chencai/tabstation" target="_blank" rel="noopener">GitHub Repository</a></li>
+              <li><a href="https://github.com/chencai/tabstation/issues" target="_blank" rel="noopener">Report Issue</a></li>
+              <li><a href="https://github.com/chencai/tabstation/releases" target="_blank" rel="noopener">Release Notes</a></li>
+              <li><a href="https://github.com/chencai/tabstation/blob/main/LICENSE" target="_blank" rel="noopener">License</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>© 2026 TabStation. Open source under MIT License. All product names, logos, and brands are property of their respective owners.</div>
+        <div style="color: var(--accent-green);">● All Systems Nominal (macOS 14/15/26+)</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
