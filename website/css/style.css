@@ -1,5 +1,5 @@
 /* ==========================================================================
-   TabStation — Official Website Stylesheet
+   AltDeck — Official Website Stylesheet
    Apple Design Language • Minimalist • High Precision • Modern macOS HUD
    ========================================================================== */
 
@@ -8,41 +8,41 @@
   --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
-  /* Color Palette - Deep Obsidian & Apple Dark Mode */
-  --bg-black: #000000;
-  --bg-page: #050508;
-  --bg-surface-elevated: rgba(22, 22, 28, 0.72);
-  --bg-glass: rgba(255, 255, 255, 0.04);
-  --bg-glass-hover: rgba(255, 255, 255, 0.08);
-  --bg-glass-active: rgba(255, 255, 255, 0.12);
-  --bg-hud: rgba(26, 26, 34, 0.88);
+  /* Color Palette - Elevated Slate Obsidian & Apple Liquid Glass */
+  --bg-black: #06080f;
+  --bg-page: #0c0f18;
+  --bg-surface-elevated: rgba(28, 33, 49, 0.86);
+  --bg-glass: rgba(255, 255, 255, 0.08);
+  --bg-glass-hover: rgba(255, 255, 255, 0.13);
+  --bg-glass-active: rgba(255, 255, 255, 0.18);
+  --bg-hud: rgba(34, 39, 58, 0.92);
 
   /* Accents */
-  --accent-blue: #2997ff;
-  --accent-blue-hover: #0077ed;
-  --accent-blue-glow: rgba(41, 151, 255, 0.35);
-  --accent-cyan: #64d2ff;
-  --accent-purple: #bf5af2;
-  --accent-green: #30d158;
-  --accent-red: #ff453a;
-  --accent-orange: #ff9f0a;
+  --accent-blue: #3aa0ff;
+  --accent-blue-hover: #1486f5;
+  --accent-blue-glow: rgba(58, 160, 255, 0.38);
+  --accent-cyan: #72dcff;
+  --accent-purple: #cb72ff;
+  --accent-green: #3ee068;
+  --accent-red: #ff564a;
+  --accent-orange: #ffab2e;
 
-  /* Text Colors */
-  --text-primary: #f5f5f7;
-  --text-secondary: #86868b;
-  --text-tertiary: #6e6e73;
-  --text-quaternary: #48484a;
+  /* Text Colors — high legibility against dark glass */
+  --text-primary: #f7f8fb;
+  --text-secondary: #bcc3d4;
+  --text-tertiary: #929bb0;
+  --text-quaternary: #667085;
 
   /* Borders & Highlights */
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-specular: rgba(255, 255, 255, 0.16);
-  --border-bright: rgba(255, 255, 255, 0.28);
-  --border-focus: rgba(41, 151, 255, 0.6);
+  --border-subtle: rgba(255, 255, 255, 0.14);
+  --border-specular: rgba(255, 255, 255, 0.28);
+  --border-bright: rgba(255, 255, 255, 0.38);
+  --border-focus: rgba(58, 160, 255, 0.65);
 
   /* Shadows */
-  --shadow-hud: 0 30px 80px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
-  --shadow-card: 0 18px 45px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.07);
-  --shadow-glow: 0 0 60px rgba(41, 151, 255, 0.15);
+  --shadow-hud: 0 30px 80px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+  --shadow-card: 0 18px 45px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.10);
+  --shadow-glow: 0 0 60px rgba(58, 160, 255, 0.22);
 
   /* Layout */
   --container-max: 1180px;
@@ -626,7 +626,7 @@ button {
 .bento-visual {
   margin-top: auto;
   border-radius: var(--radius-cell);
-  background: rgba(10, 10, 15, 0.6);
+  background: rgba(18, 23, 36, 0.88);
   border: 1px solid var(--border-subtle);
   padding: 1.25rem;
   position: relative;
@@ -688,7 +688,8 @@ button {
   position: relative;
   height: 200px;
   border-radius: 10px;
-  background: #0d0d12;
+  background: #141926;
+  border: 1px solid var(--border-subtle);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -698,7 +699,7 @@ button {
 .pip-code-background {
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: #3e3e4a;
+  color: #77839e;
   padding: 14px;
   width: 100%;
   line-height: 1.5;
@@ -807,7 +808,7 @@ button {
 
 /* Quick Look Visual */
 .quicklook-preview-box {
-  background: rgba(18, 18, 24, 0.9);
+  background: rgba(24, 30, 44, 0.94);
   border: 1px solid var(--border-specular);
   border-radius: 12px;
   padding: 14px;
@@ -832,12 +833,13 @@ button {
 
 .quicklook-body {
   height: 100px;
-  background: #090a0f;
+  background: #101521;
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 10px;
   font-family: var(--font-mono);
   font-size: 0.72rem;
-  color: #8b949e;
+  color: #b7c2d6;
   overflow: hidden;
   line-height: 1.4;
 }
@@ -1492,209 +1494,6 @@ button {
 
 
 /* ==========================================================================
-   Section: Pricing Tiers (Free vs. Pro)
-   ========================================================================== */
-.pricing-section {
-  padding: 7rem 0;
-  position: relative;
-}
-
-.pricing-billing-toggle {
-  display: inline-flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-pill);
-  padding: 4px;
-  margin: 1.5rem auto 3rem;
-  gap: 4px;
-}
-
-.billing-toggle-btn {
-  padding: 6px 16px;
-  border-radius: var(--radius-pill);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  transition: all var(--duration-fast) var(--ease-apple);
-}
-
-.billing-toggle-btn.active {
-  background: var(--accent-blue);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(41, 151, 255, 0.4);
-}
-
-.pricing-discount-badge {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  padding: 2px 6px;
-  background: rgba(48, 209, 88, 0.2);
-  color: var(--accent-green);
-  border-radius: 4px;
-  margin-left: 4px;
-}
-
-.pricing-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  align-items: stretch;
-}
-
-.pricing-card {
-  position: relative;
-  background: var(--bg-surface-elevated);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-panel);
-  padding: 2.5rem 2rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  transition: all var(--duration-medium) var(--ease-apple);
-}
-
-.pricing-card:hover {
-  border-color: var(--border-specular);
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-card);
-}
-
-.pricing-card.popular {
-  border-color: rgba(41, 151, 255, 0.45);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(41, 151, 255, 0.18);
-  background: linear-gradient(180deg, rgba(28, 28, 38, 0.95) 0%, rgba(18, 18, 26, 0.9) 100%);
-}
-
-.popular-badge {
-  position: absolute;
-  top: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--accent-blue);
-  color: #fff;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 3px 12px;
-  border-radius: var(--radius-pill);
-  box-shadow: 0 4px 12px rgba(41, 151, 255, 0.4);
-}
-
-.pricing-header {
-  margin-bottom: 1.5rem;
-}
-
-.pricing-tier-name {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 0.25rem;
-}
-
-.pricing-tier-tagline {
-  font-size: 0.8125rem;
-  color: var(--text-tertiary);
-  min-height: 2.2rem;
-}
-
-.pricing-price-box {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  margin: 1.25rem 0 1.5rem;
-}
-
-.pricing-currency {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.pricing-amount {
-  font-size: 3rem;
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  color: var(--text-primary);
-  line-height: 1;
-}
-
-.pricing-period {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-}
-
-.pricing-features {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 2rem;
-  flex-grow: 1;
-}
-
-.pricing-feature-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  line-height: 1.4;
-}
-
-.pricing-feature-item svg {
-  color: var(--accent-blue);
-  flex-shrink: 0;
-  margin-top: 3px;
-}
-
-.pricing-feature-item strong {
-  color: var(--text-primary);
-}
-
-.pricing-card.popular .pricing-feature-item svg {
-  color: var(--accent-cyan);
-}
-
-.btn-pricing {
-  width: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px;
-  border-radius: var(--radius-pill);
-  font-size: 0.875rem;
-  font-weight: 600;
-  transition: all var(--duration-fast) var(--ease-apple);
-}
-
-.btn-pricing.free {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  border: 1px solid var(--border-specular);
-}
-
-.btn-pricing.free:hover {
-  background: rgba(255, 255, 255, 0.14);
-}
-
-.btn-pricing.pro {
-  background: var(--accent-blue);
-  color: #fff;
-  box-shadow: 0 4px 20px rgba(41, 151, 255, 0.35);
-}
-
-.btn-pricing.pro:hover {
-  background: var(--accent-blue-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(41, 151, 255, 0.5);
-}
-
-/* ==========================================================================
    Section: FAQ (SEO-Engineered Schema & Content)
    ========================================================================== */
 .faq-section {
@@ -1770,15 +1569,6 @@ button {
   max-height: 300px;
   padding-bottom: 1.5rem;
 }
-
-@media (max-width: 992px) {
-  .pricing-grid {
-    grid-template-columns: 1fr;
-    max-width: 480px;
-    margin: 0 auto;
-  }
-}
-
 
 /* ==========================================================================
    Section: Open Source Community Pledge

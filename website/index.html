@@ -3,30 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TabStation — Native macOS Window Switcher &amp; Workspace Manager</title>
-  <meta name="description" content="TabStation v1.0 is a fast, minimalist native macOS window switcher built in pure Swift &amp; AppKit. Native Liquid Glass, Hold-to-Preview, browser tab jumping, interactive Picture-in-Picture, and modular window tiling.">
-  <meta name="keywords" content="macOS window switcher, AltTab alternative mac, Command Tab replacement, ScreenCaptureKit, Liquid Glass NSGlassEffectView, mac window manager, picture in picture mac, switch browser tabs mac, swift appkit macos">
+  <title>AltDeck — Fast Native macOS Window Switcher &amp; Alt-Tab Alternative</title>
+  <meta name="description" content="AltDeck v1.0 is a 100% free &amp; open-source native macOS window switcher (AltTab &amp; Command-Tab replacement) in pure Swift &amp; AppKit. Features Liquid Glass, instant S-key Chrome/Safari/Arc browser tabs, SCStream PiP, Hold-to-Preview, and window tiling.">
+  <meta name="keywords" content="AltDeck, macOS window switcher, AltTab alternative mac, Command Tab replacement, macOS Alt-Tab, Liquid Glass NSGlassEffectView, ScreenCaptureKit, switch Chrome tabs mac, picture in picture mac, swift appkit macos">
   <meta name="author" content="icaichen">
   <meta name="robots" content="index, follow">
-  <meta name="theme-color" content="#050508">
-  <link rel="canonical" href="https://tabstation.app/">
+  <meta name="theme-color" content="#0c0f18">
+  <link rel="canonical" href="https://altdeck-two.vercel.app/">
   
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="assets/app-icon.png">
   <link rel="apple-touch-icon" href="assets/app-icon.png">
 
   <!-- OpenGraph -->
-  <meta property="og:title" content="TabStation v1.0 — The Window Switcher macOS Was Destined to Have">
+  <meta property="og:title" content="AltDeck v1.0 — The Window Switcher macOS Was Destined to Have">
   <meta property="og:description" content="Pure Swift + AppKit. Native Liquid Glass, Hold-to-Preview on pause, browser tab jumping, interactive PiP, and customizable window tiling.">
-  <meta property="og:image" content="https://tabstation.app/assets/switcher.png">
-  <meta property="og:url" content="https://tabstation.app/">
+  <meta property="og:image" content="https://altdeck-two.vercel.app/assets/switcher.png">
+  <meta property="og:url" content="https://altdeck-two.vercel.app/">
   <meta property="og:type" content="website">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="TabStation v1.0 — Native macOS Window Switcher">
+  <meta name="twitter:title" content="AltDeck v1.0 — Native macOS Window Switcher">
   <meta name="twitter:description" content="Native Liquid Glass, Hold-to-Preview, browser tab navigation, floating PiP, and instant keyboard tiling for macOS.">
-  <meta name="twitter:image" content="https://tabstation.app/assets/switcher.png">
+  <meta name="twitter:image" content="https://altdeck-two.vercel.app/assets/switcher.png">
 
   <!-- Schema.org JSON-LD Structured Data -->
   <script type="application/ld+json">
@@ -35,7 +35,7 @@
     "@graph": [
       {
         "@type": "SoftwareApplication",
-        "name": "TabStation",
+        "name": "AltDeck",
         "softwareVersion": "1.0.0",
         "operatingSystem": "macOS 14.0 or later",
         "applicationCategory": "ProductivityApplication",
@@ -55,34 +55,34 @@
         "mainEntity": [
           {
             "@type": "Question",
-            "name": "How does TabStation differ from AltTab for macOS?",
+            "name": "How does AltDeck differ from AltTab for macOS?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Built from scratch in pure Swift and AppKit, TabStation brings macOS 26+ native Liquid Glass (NSGlassEffectView), natural Hold-to-Preview when pausing on an icon, deep browser tab switching across Chrome, Safari, Edge, Arc, and Brave, floating Picture-in-Picture, and modular keyboard window tiling you can toggle independently."
+              "text": "Built from scratch in pure Swift and AppKit, AltDeck brings macOS 26+ native Liquid Glass (NSGlassEffectView), natural Hold-to-Preview when pausing on an icon, deep browser tab switching across Chrome, Safari, Edge, Arc, and Brave, floating Picture-in-Picture, and modular keyboard window tiling you can toggle independently."
             }
           },
           {
             "@type": "Question",
-            "name": "Is TabStation completely free and open source?",
+            "name": "Is AltDeck completely free and open source?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes! TabStation v1.0 is 100% free and open source under the MIT License. Every feature is unlocked out of the box with zero paywalls and zero subscriptions."
+              "text": "Yes! AltDeck v1.0 is 100% free and open source under the MIT License. Every feature is unlocked out of the box with zero paywalls and zero subscriptions."
             }
           },
           {
             "@type": "Question",
-            "name": "Why does TabStation require Accessibility and Screen Recording permissions?",
+            "name": "Why does AltDeck require Accessibility and Screen Recording permissions?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Accessibility allows TabStation to observe your custom trigger modifier via CGEventTap and accurately raise specific windows using AXUIElement. Screen Recording enables on-demand ScreenCaptureKit Retina thumbnails and live Hold-to-Preview inspection."
+              "text": "Accessibility allows AltDeck to observe your custom trigger modifier via CGEventTap and accurately raise specific windows using AXUIElement. Screen Recording enables on-demand ScreenCaptureKit Retina thumbnails and live Hold-to-Preview inspection."
             }
           },
           {
             "@type": "Question",
-            "name": "Does TabStation phone home or collect telemetry?",
+            "name": "Does AltDeck phone home or collect telemetry?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Zero telemetry and zero analytics. TabStation never tracks usage, never phones home, and performs window switching and capture strictly locally on your Mac."
+              "text": "Zero telemetry and zero analytics. AltDeck never tracks usage, never phones home, and performs window switching and capture strictly locally on your Mac."
             }
           }
         ]
@@ -101,14 +101,14 @@
   <header class="site-header">
     <div class="container nav-container">
       <a href="#" class="nav-brand">
-        <img src="assets/app-icon.png" alt="TabStation Logo">
-        <span>TabStation</span>
+        <img src="assets/app-icon.png" alt="AltDeck Logo">
+        <span>AltDeck</span>
         <span class="nav-badge">v1.0 Open Source</span>
       </a>
 
       <nav>
         <ul class="nav-menu">
-          <li><a href="#why-tabstation">Why TabStation</a></li>
+          <li><a href="#why-altdeck">Why AltDeck</a></li>
           <li><a href="#interactive-sandbox">Interactive Demo</a></li>
           <li><a href="#comparison">Comparison</a></li>
           <li><a href="#open-source">Open Source</a></li>
@@ -153,7 +153,7 @@
       </h1>
 
       <p class="subhead">
-        Apple’s ⌘Tab was conceived in 1984 for whole applications. Today, our real work spans dozens of windows, tabs, and displays. TabStation brings native Liquid Glass aesthetics, sub-millisecond responsiveness, natural hold-to-preview, browser tab jumping, and modular window tiling into one clean, tactile gesture.
+        Apple’s ⌘Tab was conceived in 1984 for whole applications. Today, our real work spans dozens of windows, tabs, and displays. AltDeck brings native Liquid Glass aesthetics, sub-millisecond responsiveness, natural hold-to-preview, browser tab jumping, and modular window tiling into one clean, tactile gesture.
       </p>
 
       <div class="hero-cta-group">
@@ -203,7 +203,7 @@
             <div class="traffic-light yellow"></div>
             <div class="traffic-light green"></div>
           </div>
-          <div class="stage-title">TabStation HUD — Active Option+Tab Strip</div>
+          <div class="stage-title">AltDeck HUD — Active Option+Tab Strip</div>
           <div class="stage-status-badge">
             <span class="stage-status-dot"></span>
             <span>Liquid Glass • ScreenCaptureKit</span>
@@ -211,7 +211,7 @@
         </div>
 
         <div class="hero-image-container">
-          <img src="assets/switcher.png" alt="TabStation Native macOS Switcher HUD">
+          <img src="assets/switcher.png" alt="AltDeck Native macOS Switcher HUD">
 
           <!-- Overlaid Pill Callouts -->
           <div class="hero-floating-pill pill-left">
@@ -235,9 +235,9 @@
   </section>
 
   <!-- ========================================================================
-       Section: Why TabStation / What We Can Do That Others Cannot
+       Section: Why AltDeck / What We Can Do That Others Cannot
        ======================================================================== -->
-  <section id="why-tabstation" class="why-section">
+  <section id="why-altdeck" class="why-section">
     <div id="capabilities" style="position: relative; top: -80px;"></div>
     <div class="container">
       <div class="section-header">
@@ -261,10 +261,10 @@
             <div class="bento-comparison-badge">
               <span>✕ AltTab &amp; ⌘Tab: Treat browser as 1 opaque block</span>
               <span>•</span>
-              <span>✓ TabStation: Direct tab-level jumping</span>
+              <span>✓ AltDeck: Direct tab-level jumping</span>
             </div>
             <p class="bento-desc">
-              Every other switcher sees Google Chrome or Safari as a single opaque block. TabStation keeps your default strip uncluttered with apps &amp; windows only—then press <span class="key-badge">S</span> anytime for instant, pre-warmed switching across live Chrome, Safari, Edge, Arc, and Brave tabs (or mix tabs in by default in Settings).
+              Every other switcher sees Google Chrome or Safari as a single opaque block. AltDeck keeps your default strip uncluttered with apps &amp; windows only—then press <span class="key-badge">S</span> anytime for instant, pre-warmed switching across live Chrome, Safari, Edge, Arc, and Brave tabs (or mix tabs in by default in Settings).
             </p>
           </div>
 
@@ -394,7 +394,7 @@
             <div class="bento-tag">Multi-Monitor Perfection</div>
             <h3 class="bento-title">Cursor Monitor &amp; Key: D Teleport</h3>
             <p class="bento-desc">
-              TabStation opens automatically on whichever monitor your cursor is on. Need to move a window across dual Studio Displays or an ultrawide? Press <span class="key-badge">D</span> to teleport it to the next screen.
+              AltDeck opens automatically on whichever monitor your cursor is on. Need to move a window across dual Studio Displays or an ultrawide? Press <span class="key-badge">D</span> to teleport it to the next screen.
             </p>
           </div>
 
@@ -412,12 +412,12 @@
               <div class="bento-tag">Architectural Masterclass</div>
               <h3 class="bento-title">Crash-Safe SkyLight WindowServer ⌘Tab Override</h3>
               <p class="bento-desc">
-                Many users want to replace the macOS default ⌘Tab completely, but traditional utilities use dangerous hacks that can leave your system switcher permanently broken if the app terminates unexpectedly. TabStation communicates directly with SkyLight WindowServer SPI via <code>CGSSetSymbolicHotKeyEnabled</code>, accompanied by POSIX signal handlers (SIGINT, SIGTERM, SIGHUP) that restore Apple's native switcher instantaneously upon termination or quit.
+                Many users want to replace the macOS default ⌘Tab completely, but traditional utilities use dangerous hacks that can leave your system switcher permanently broken if the app terminates unexpectedly. AltDeck communicates directly with SkyLight WindowServer SPI via <code>CGSSetSymbolicHotKeyEnabled</code>, accompanied by POSIX signal handlers (SIGINT, SIGTERM, SIGHUP) that restore Apple's native switcher instantaneously upon termination or quit.
               </p>
             </div>
             <div style="background: rgba(48, 209, 88, 0.1); border: 1px solid rgba(48, 209, 88, 0.25); border-radius: 12px; padding: 16px 20px; font-size: 0.84rem; color: #b7ffcd;">
               <strong style="display: block; margin-bottom: 4px; color: #fff;">100% Fail-Safe Guarantee</strong>
-              <span>If TabStation is closed, native ⌘Tab is restored before the next frame is drawn.</span>
+              <span>If AltDeck is closed, native ⌘Tab is restored before the next frame is drawn.</span>
             </div>
           </div>
         </div>
@@ -437,7 +437,7 @@
           Feel the speed.<br>Right here in your browser.
         </h2>
         <p class="subhead">
-          Test the exact physics and gestures of TabStation. Use your keyboard (<span class="key-badge">Alt</span>+<span class="key-badge">Tab</span>, Arrow keys, <span class="key-badge">Space</span>, <span class="key-badge">P</span>) or click the controls below.
+          Test the exact physics and gestures of AltDeck. Use your keyboard (<span class="key-badge">Alt</span>+<span class="key-badge">Tab</span>, Arrow keys, <span class="key-badge">S</span>, <span class="key-badge">Space</span>, <span class="key-badge">P</span>) or click the controls below.
         </p>
       </div>
 
@@ -474,7 +474,7 @@
             </div>
             <div class="card-meta-row">
               <div class="card-title">PreferencesWindowController.swift</div>
-              <div class="card-app-name">Xcode • TabStation Project</div>
+              <div class="card-app-name">Xcode • AltDeck Project</div>
             </div>
           </div>
 
@@ -488,12 +488,12 @@
             <div class="card-thumbnail-preview">
               <img src="https://cdn.simpleicons.org/googlechrome/4285f4" class="card-app-icon-badge" alt="Chrome">
               <div style="text-align: center; padding: 8px;">
-                <div style="font-size: 0.72rem; font-weight: 600; color: #fff;">icaichen / tabstation</div>
+                <div style="font-size: 0.72rem; font-weight: 600; color: #fff;">icaichen / altdeck</div>
                 <div style="font-size: 0.62rem; color: #8b949e; margin-top: 4px;">Pull Request #42: ScreenCaptureKit pipeline</div>
               </div>
             </div>
             <div class="card-meta-row">
-              <div class="card-title">icaichen/tabstation: Pull Request #42</div>
+              <div class="card-title">icaichen/altdeck: Pull Request #42</div>
               <div class="card-app-name">Google Chrome • GitHub</div>
             </div>
           </div>
@@ -511,12 +511,12 @@
                 $ ./build-app.sh<br>
                 [✓] SwiftPM compile: 1.2s<br>
                 [✓] Codesign ad-hoc ok<br>
-                dist/TabStation.app
+                dist/AltDeck.app
               </div>
             </div>
             <div class="card-meta-row">
               <div class="card-title">zsh — ./build-app.sh release</div>
-              <div class="card-app-name">Terminal • TabStation Build</div>
+              <div class="card-app-name">Terminal • AltDeck Build</div>
             </div>
           </div>
 
@@ -535,7 +535,7 @@
               </div>
             </div>
             <div class="card-meta-row">
-              <div class="card-title">TabStation HUD Redesign</div>
+              <div class="card-title">AltDeck HUD Redesign</div>
               <div class="card-app-name">Figma • Architecture Drafts</div>
             </div>
           </div>
@@ -616,17 +616,17 @@
   </section>
 
   <!-- ========================================================================
-       Section: Comparison Matrix (TabStation vs. Others)
+       Section: Comparison Matrix (AltDeck vs. Others)
        ======================================================================== -->
   <section id="comparison" class="comparison-section">
     <div class="container">
       <div class="section-header">
         <div class="eyebrow">Objective Benchmark</div>
         <h2 class="headline-section">
-          How TabStation compares.
+          How AltDeck compares.
         </h2>
         <p class="subhead">
-          See why demanding engineers, designers, and power users choose TabStation over legacy tools and Apple’s built-in switcher.
+          See why demanding engineers, designers, and power users choose AltDeck over legacy tools and Apple’s built-in switcher.
         </p>
       </div>
 
@@ -637,7 +637,7 @@
               <th class="col-feature">Multitasking Capability</th>
               <th class="col-competitor">Apple ⌘Tab (macOS Native)</th>
               <th class="col-competitor">Standard AltTab Utilities</th>
-              <th class="col-highlight">TabStation (Pure Swift)</th>
+              <th class="col-highlight">AltDeck (Pure Swift)</th>
             </tr>
           </thead>
           <tbody>
@@ -777,7 +777,7 @@
           Engineered for raw speed.
         </h2>
         <p class="subhead">
-          TabStation is crafted with obsessive discipline. No web frameworks, no bloated bundles, and zero compromises on battery life.
+          AltDeck is crafted with obsessive discipline. No web frameworks, no bloated bundles, and zero compromises on battery life.
         </p>
       </div>
 
@@ -844,7 +844,7 @@
           Shortcuts designed for muscle memory.
         </h2>
         <p class="subhead">
-          Every command is an extension of standard macOS conventions. Customize any trigger chord inside TabStation Preferences (<span class="key-badge">⌘,</span>).
+          Every command is an extension of standard macOS conventions. Customize any trigger chord inside AltDeck Preferences (<span class="key-badge">⌘,</span>).
         </p>
       </div>
 
@@ -992,7 +992,7 @@
         </h2>
 
         <p class="subhead" style="max-width: 720px; margin: 0 auto 2.5rem;">
-          Not everything in life needs to be monetized. We built TabStation to solve real frustrations with macOS window multitasking. Every single superpower—from deep browser tab traversal to interactive Picture-in-Picture—is completely free, open source, and yours forever.
+          Not everything in life needs to be monetized. We built AltDeck to solve real frustrations with macOS window multitasking. Every single superpower—from deep browser tab traversal to interactive Picture-in-Picture—is completely free, open source, and yours forever.
         </p>
 
         <!-- Open Source Value Pillars -->
@@ -1031,7 +1031,7 @@
           </a>
 
           <a href="#download" class="btn-secondary">
-            <span>Download TabStation Free</span>
+            <span>Download AltDeck Free</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
@@ -1061,19 +1061,19 @@
 
         <div class="faq-item">
           <button class="faq-question-btn">
-            <span>How does TabStation differ from AltTab for Mac?</span>
+            <span>How does AltDeck differ from AltTab for Mac?</span>
             <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
           <div class="faq-answer">
             <p>
-              While AltTab is a pioneer in bringing the Windows-style switcher to macOS, TabStation was built from scratch in pure Swift and AppKit. TabStation v1.0 delivers macOS 26+ native Liquid Glass (<code>NSGlassEffectView</code>), natural Hold-to-Preview on pause in Icons Only mode, deep browser tab switching across Chrome/Safari/Edge/Arc/Brave, floating Picture-in-Picture, and a Settings → Features tab letting you enable or disable every power feature individually.
+              While AltTab is a pioneer in bringing the Windows-style switcher to macOS, AltDeck was built from scratch in pure Swift and AppKit. AltDeck v1.0 delivers macOS 26+ native Liquid Glass (<code>NSGlassEffectView</code>), natural Hold-to-Preview on pause in Icons Only mode, deep browser tab switching across Chrome/Safari/Edge/Arc/Brave, floating Picture-in-Picture, and a Settings → Features tab letting you enable or disable every power feature individually.
             </p>
           </div>
         </div>
 
         <div class="faq-item">
           <button class="faq-question-btn">
-            <span>Is TabStation completely free and open source?</span>
+            <span>Is AltDeck completely free and open source?</span>
             <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
           <div class="faq-answer">
@@ -1085,31 +1085,31 @@
 
         <div class="faq-item">
           <button class="faq-question-btn">
-            <span>Why did you make TabStation entirely free instead of charging for it?</span>
+            <span>Why did you make AltDeck entirely free instead of charging for it?</span>
             <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
           <div class="faq-answer">
             <p>
-              Because not everything in software needs to be a business. We built TabStation to solve real, daily frustrations with macOS multitasking, and we believe the best tools should be accessible to every creator, developer, and thinker. It is our gift to the Mac community.
+              Because not everything in software needs to be a business. We built AltDeck to solve real, daily frustrations with macOS multitasking, and we believe the best tools should be accessible to every creator, developer, and thinker. It is our gift to the Mac community.
             </p>
           </div>
         </div>
 
         <div class="faq-item">
           <button class="faq-question-btn">
-            <span>How can I support or contribute to TabStation?</span>
+            <span>How can I support or contribute to AltDeck?</span>
             <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
           <div class="faq-answer">
             <p>
-              The greatest way to support TabStation is to <strong>star the project on GitHub</strong>, share it with colleagues and friends, report bugs on our issue tracker, and submit pull requests. Community word-of-mouth is what powers our growth.
+              The greatest way to support AltDeck is to <strong>star the project on GitHub</strong>, share it with colleagues and friends, report bugs on our issue tracker, and submit pull requests. Community word-of-mouth is what powers our growth.
             </p>
           </div>
         </div>
 
         <div class="faq-item">
           <button class="faq-question-btn">
-            <span>Why does TabStation ask for Accessibility, Screen Recording, and Automation?</span>
+            <span>Why does AltDeck ask for Accessibility, Screen Recording, and Automation?</span>
             <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
           <div class="faq-answer">
@@ -1127,12 +1127,12 @@
 
         <div class="faq-item">
           <button class="faq-question-btn">
-            <span>How does TabStation discover tabs in Chrome, Safari, and Arc?</span>
+            <span>How does AltDeck discover tabs in Chrome, Safari, and Arc?</span>
             <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
           <div class="faq-answer">
             <p>
-              TabStation queries the AppleScript scripting dictionaries of running browsers via a dedicated high-performance service. It enumerates window IDs and tab titles without injecting code or modifying browser processes. When you select a tab in TabStation, it activates the target browser window and brings that exact tab to the front.
+              AltDeck queries the AppleScript scripting dictionaries of running browsers via a dedicated high-performance service. It enumerates window IDs and tab titles without injecting code or modifying browser processes. When you select a tab in AltDeck, it activates the target browser window and brings that exact tab to the front.
             </p>
           </div>
         </div>
@@ -1144,19 +1144,19 @@
           </button>
           <div class="faq-answer">
             <p>
-              Yes. Unlike fragile hacks, TabStation communicates with the SkyLight WindowServer via <code>CGSSetSymbolicHotKeyEnabled</code>. Crucially, TabStation registers POSIX signal handlers (SIGINT, SIGTERM, SIGHUP) and termination hooks that restore Apple’s native Command-Tab immediately if TabStation is ever quit or terminated.
+              Yes. Unlike fragile hacks, AltDeck communicates with the SkyLight WindowServer via <code>CGSSetSymbolicHotKeyEnabled</code>. Crucially, AltDeck registers POSIX signal handlers (SIGINT, SIGTERM, SIGHUP) and termination hooks that restore Apple’s native Command-Tab immediately if AltDeck is ever quit or terminated.
             </p>
           </div>
         </div>
 
         <div class="faq-item">
           <button class="faq-question-btn">
-            <span>Does TabStation run on Apple Silicon and macOS 26+ Liquid Glass?</span>
+            <span>Does AltDeck run on Apple Silicon and macOS 26+ Liquid Glass?</span>
             <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
           <div class="faq-answer">
             <p>
-              Yes. TabStation runs natively on Apple Silicon Macs (M1 through M4) on macOS 14.0 Sonoma, macOS 15.0 Sequoia, and macOS 26+ (where it automatically uses native <code>NSGlassEffectView</code> Liquid Glass). You can also build from source cleanly on Intel or Apple Silicon with <code>./build-app.sh release</code>.
+              Yes. AltDeck runs natively on Apple Silicon Macs (M1 through M4) on macOS 14.0 Sonoma, macOS 15.0 Sequoia, and macOS 26+ (where it automatically uses native <code>NSGlassEffectView</code> Liquid Glass). You can also build from source cleanly on Intel or Apple Silicon with <code>./build-app.sh release</code>.
             </p>
           </div>
         </div>
@@ -1171,7 +1171,7 @@
   <section id="download" class="download-section">
     <div class="container">
       <div class="download-box">
-        <img src="assets/app-icon.png" class="download-icon" alt="TabStation Icon">
+        <img src="assets/app-icon.png" class="download-icon" alt="AltDeck Icon">
         
         <h2 class="headline-section" style="margin-bottom: 1rem;">
           Upgrade your macOS multitasking today.
@@ -1188,7 +1188,7 @@
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
-            <span>Download TabStation v1.0</span>
+            <span>Download AltDeck v1.0</span>
           </a>
 
           <button class="btn-secondary btn-copy-install" data-copy="git clone https://github.com/icaichen/tabstation.git &amp;&amp; cd tabstation &amp;&amp; ./build-app.sh release">
@@ -1216,7 +1216,7 @@
     <div class="container">
       <div class="footer-top">
         <div class="footer-brand">
-          <div class="footer-brand-title">TabStation</div>
+          <div class="footer-brand-title">AltDeck</div>
           <p style="line-height: 1.6;">
             A high-performance native macOS window switcher crafted with Swift and AppKit. Designed for developers, designers, and thinkers who demand absolute precision.
           </p>
@@ -1226,7 +1226,7 @@
           <div class="footer-col">
             <h4>Product</h4>
             <ul>
-              <li><a href="#why-tabstation">Why TabStation</a></li>
+              <li><a href="#why-altdeck">Why AltDeck</a></li>
               <li><a href="#capabilities">Features</a></li>
               <li><a href="#interactive-sandbox">Interactive Sandbox</a></li>
               <li><a href="#comparison">Comparison Matrix</a></li>
@@ -1256,7 +1256,7 @@
       </div>
 
       <div class="footer-bottom">
-        <div>© 2026 TabStation. Open source under MIT License. All product names, logos, and brands are property of their respective owners.</div>
+        <div>© 2026 AltDeck. Open source under MIT License. All product names, logos, and brands are property of their respective owners.</div>
         <div style="color: var(--accent-green);">● All Systems Nominal (macOS 14/15/26+)</div>
       </div>
     </div>

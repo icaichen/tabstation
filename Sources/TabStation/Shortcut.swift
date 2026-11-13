@@ -191,7 +191,7 @@ enum ShortcutValidator {
         guard modifiers.contains(.command) else { return nil }
 
         if modifiers == [.command] && shortcut.keyCode == KeyCode.space {
-            return "⌘Space opens Spotlight. TabStation will take it over while it's running."
+            return "⌘Space opens Spotlight. AltDeck will take it over while it's running."
         }
         return nil
     }

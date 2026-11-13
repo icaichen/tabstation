@@ -1,4 +1,4 @@
-# TabStation
+# AltDeck
 
 A native macOS window switcher — the AltTab experience: hold **⌥**, tap **Tab**,
 and pick the exact window you want from live thumbnails. Release **⌥** to switch.
@@ -12,12 +12,12 @@ Built with Swift + AppKit. No Electron, no runtime dependencies, no network acce
 ## Build and run
 
 ```bash
-./build-app.sh            # release build → dist/TabStation.app
+./build-app.sh            # release build → dist/AltDeck.app
 ./build-app.sh debug      # faster build, slower at runtime
-open dist/TabStation.app
+open dist/AltDeck.app
 ```
 
-Build artefacts go to `~/.cache/tabstation-build`, not into the project. On a
+Build artefacts go to `~/.cache/altdeck-build`, not into the project. On a
 file-synced Desktop, building in-tree makes every SDK stat-cache read a network
 round trip — the same clean build measured 12+ minutes in-tree versus 24s
 out-of-tree.
@@ -26,8 +26,8 @@ The script compiles with SwiftPM, wraps the binary in a proper `.app` bundle, an
 ad-hoc signs it. Installing to `~/Applications` is recommended:
 
 ```bash
-cp -R dist/TabStation.app ~/Applications/
-open ~/Applications/TabStation.app
+cp -R dist/AltDeck.app ~/Applications/
+open ~/Applications/AltDeck.app
 ```
 
 > **Don't run it from a file-synced Desktop.** macOS keeps re-applying
@@ -37,14 +37,14 @@ open ~/Applications/TabStation.app
 > but anything living in a synced folder can still get re-tagged.
 > `~/Applications` is local and unaffected.
 
-> **Note on signing:** TabStation is ad-hoc signed. macOS ties Accessibility and
+> **Note on signing:** AltDeck is ad-hoc signed. macOS ties Accessibility and
 > Screen Recording grants to a bundle's identity, so if you rebuild after granting
-> permissions, use **Relaunch TabStation** from the menu bar icon (or re-grant) —
+> permissions, use **Relaunch AltDeck** from the menu bar icon (or re-grant) —
 > a stale grant silently degrades the app to icon mode.
 
 ## Permissions
 
-TabStation asks for two permissions. Both are optional in the sense that the app
+AltDeck asks for two permissions. Both are optional in the sense that the app
 stays usable without them, but one of them is required for the core gesture:
 
 | Permission | Why | Without it |
@@ -83,7 +83,7 @@ matches yours exactly, so the system app switcher keeps working as normal.
 
 **Menu bar → Override ⌘Tab**, or the checkbox in Preferences. Off by default.
 
-⌘Tab is owned by the WindowServer, so TabStation normally can't see it. With the
+⌘Tab is owned by the WindowServer, so AltDeck normally can't see it. With the
 override on, the event tap *swallows* ⌘Tab (the callback returns `nil`), which
 prevents the system app switcher from ever acting on it — then drives the
 switcher from the same chord: hold ⌘, tap Tab to cycle, release ⌘ to commit.
@@ -91,7 +91,7 @@ switcher from the same chord: hold ⌘, tap Tab to cycle, release ⌘ to commit.
 What this costs you:
 
 - **⌘Tab stops working in every application**, not just the focused one. Quit
-  TabStation and it comes back.
+  AltDeck and it comes back.
 - It's undocumented behaviour. A future macOS update could stop it working.
 - It's the one part of this app I could not verify in my test environment (no
   Accessibility permission available to a headless shell), so treat it as
@@ -139,7 +139,7 @@ are grouped by app in front-to-back order, which is what makes ⌥` ("cycle with
 this app") a natural two-key gesture.
 
 **Thumbnails — ScreenCaptureKit, not CoreGraphics.** `CGWindowListCreateImage` is
-annotated `SCREEN_CAPTURE_OBSOLETE` as of macOS 15 in the SDK, so TabStation uses
+annotated `SCREEN_CAPTURE_OBSOLETE` as of macOS 15 in the SDK, so AltDeck uses
 `SCContentFilter(desktopIndependentWindow:)` + `SCScreenshotManager.captureImage`.
 The important property: it renders a window's own content **even when that window is
 completely covered**, which is the entire point of a switcher. Captures run at up to
@@ -148,7 +148,7 @@ resampled, and are discarded if the switcher closes before they land.
 
 **Raising a window — `AXUIElement`.** `NSRunningApplication.activate()` alone lands
 on whichever window the app considers "main", which is wrong the moment an app has
-several open. TabStation matches the CoreGraphics window ID against the AX window
+several open. AltDeck matches the CoreGraphics window ID against the AX window
 list and raises that element. This needs the undocumented-but-long-stable
 `AXWindowNumber` attribute, which has no symbol in the SDK — hence the literal
 string in `WindowActivator.swift`. Without Accessibility it degrades to a plain
@@ -166,7 +166,7 @@ focus, so the app behind it keeps its ⌥-chord.
 ## Project layout
 
 ```
-Sources/TabStation/
+Sources/AltDeck/
   main.swift              entry point (LSUIElement / accessory agent)
   AppDelegate.swift       status item, permissions, onboarding
   Shortcut.swift          keycode table, shortcut model, validation, storage

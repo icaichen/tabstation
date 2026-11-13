@@ -275,7 +275,7 @@ final class PreferencesWindowController: NSWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "TabStation Settings"
+        window.title = "AltDeck Settings"
         window.isReleasedWhenClosed = false
         self.init(window: window)
         buildContent()
@@ -611,7 +611,7 @@ final class PreferencesWindowController: NSWindowController {
         let behaviorCard = makeSectionCard(title: "Behavior & System Integration", rows: [
             makeSwitchRow(
                 title: "Override ⌘Tab",
-                subtitle: "Replace the built-in macOS application switcher with TabStation.",
+                subtitle: "Replace the built-in macOS application switcher with AltDeck.",
                 toggle: overrideCommandTabSwitch,
                 action: #selector(toggleOverrideCommandTab)
             ),
@@ -634,7 +634,7 @@ final class PreferencesWindowController: NSWindowController {
                 action: #selector(toggleShowMinimized)
             ),
             makeSwitchRow(
-                title: "Launch TabStation at Login",
+                title: "Launch AltDeck at Login",
                 subtitle: "Start automatically in the background whenever you log in.",
                 toggle: launchAtLoginSwitch,
                 action: #selector(toggleLaunchAtLogin)

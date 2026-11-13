@@ -118,10 +118,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let button = item.button {
             button.image = NSImage(
                 systemSymbolName: "square.stack.3d.up.fill",
-                accessibilityDescription: "TabStation"
+                accessibilityDescription: "AltDeck"
             )
             button.image?.isTemplate = true
-            button.toolTip = "TabStation — hold ⌥ and tap Tab"
+            button.toolTip = "AltDeck — hold ⌥ and tap Tab"
         }
 
         let menu = NSMenu()
@@ -138,7 +138,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             switch role {
             case .primary:
                 self.interceptor.primaryShortcut = shortcut
-                self.statusItem?.button?.toolTip = "TabStation — hold \(shortcut.displayString)"
+                self.statusItem?.button?.toolTip = "AltDeck — hold \(shortcut.displayString)"
             case .sameApp:
                 self.interceptor.sameAppShortcut = shortcut
             }
@@ -255,7 +255,7 @@ extension AppDelegate: NSMenuDelegate {
         let accessibility = Permissions.accessibilityGranted
         let screenRecording = Permissions.screenRecordingGranted
 
-        let title = NSMenuItem(title: "TabStation", action: nil, keyEquivalent: "")
+        let title = NSMenuItem(title: "AltDeck", action: nil, keyEquivalent: "")
         title.isEnabled = false
         menu.addItem(title)
         menu.addItem(.separator())
@@ -405,11 +405,11 @@ extension AppDelegate: NSMenuDelegate {
 
         menu.addItem(.separator())
 
-        let relaunch = NSMenuItem(title: "Relaunch TabStation", action: #selector(relaunch), keyEquivalent: "r")
+        let relaunch = NSMenuItem(title: "Relaunch AltDeck", action: #selector(relaunch), keyEquivalent: "r")
         relaunch.target = self
         menu.addItem(relaunch)
 
-        let quit = NSMenuItem(title: "Quit TabStation", action: #selector(quit), keyEquivalent: "q")
+        let quit = NSMenuItem(title: "Quit AltDeck", action: #selector(quit), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
     }

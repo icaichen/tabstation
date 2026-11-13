@@ -13,7 +13,7 @@ set -euo pipefail
 
 CONFIG="${1:-release}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_NAME="TabStation"
+APP_NAME="AltDeck"
 BUNDLE_ID="com.tabstation.TabStation"
 VERSION="1.0.0"
 APP="$ROOT/dist/$APP_NAME.app"
@@ -40,7 +40,7 @@ swift_build() {
 echo "==> Building ($CONFIG)…"
 swift_build
 BIN_PATH="$(swift_build --show-bin-path)"
-BINARY="$BIN_PATH/$APP_NAME"
+BINARY="$BIN_PATH/TabStation"
 
 if [[ ! -x "$BINARY" ]]; then
   echo "error: expected executable at $BINARY" >&2
@@ -71,14 +71,28 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>NSPrincipalClass</key><string>NSApplication</string>
     <key>NSSupportsAutomaticTermination</key><false/>
     <key>NSSupportsSuddenTermination</key><false/>
-    <key>NSAppleEventsUsageDescription</key><string>TabStation uses Apple Events to list and switch open browser tabs in Chrome, Safari, Arc, Edge, and Brave.</string>
+    <key>NSAppleEventsUsageDescription</key><string>AltDeck uses Apple Events to list and switch open browser tabs in Chrome, Safari, Arc, Edge, and Brave.</string>
 </dict>
 </plist>
 PLIST
 
 echo "==> Generating icon…"
 rm -rf "$ICONSET"
-if swift "$ROOT/Tools/GenerateIcon.swift" "$ICONSET" >/dev/null 2>&1 \
+mkdir -p "$ICONSET"
+MASTER_ICON="$ROOT/Assets/AppIcon-1024.png"
+if [[ -f "$MASTER_ICON" ]] && command -v sips >/dev/null 2>&1; then
+  for spec in "16:icon_16x16.png" "32:icon_16x16@2x.png" "32:icon_32x32.png" "64:icon_32x32@2x.png" "128:icon_128x128.png" "256:icon_128x128@2x.png" "256:icon_256x256.png" "512:icon_256x256@2x.png" "512:icon_512x512.png" "1024:icon_512x512@2x.png"; do
+    px="${spec%%:*}"
+    out="${spec#*:}"
+    sips -z "$px" "$px" "$MASTER_ICON" --out "$ICONSET/$out" >/dev/null 2>&1
+  done
+  if iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns" 2>/dev/null; then
+    echo "    AppIcon.icns created from Assets/AppIcon-1024.png"
+  else
+    echo "    iconutil failed" >&2
+    rm -f "$APP/Contents/Resources/AppIcon.icns"
+  fi
+elif swift "$ROOT/Tools/GenerateIcon.swift" "$ICONSET" >/dev/null 2>&1 \
    && iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns" 2>/dev/null; then
   echo "    AppIcon.icns created"
 else
@@ -142,13 +156,20 @@ echo "Built: $APP"
 # Install to /Applications — the folder Finder's sidebar actually shows.
 # ~/Applications is hidden by default, which makes an app there look "missing".
 INSTALLED="${TABSTATION_INSTALL:-/Applications}/$APP_NAME.app"
-if [[ "${1:-}" == "--install" || -d "$INSTALLED" ]]; then
+LEGACY_INSTALLED="${TABSTATION_INSTALL:-/Applications}/TabStation.app"
+if [[ "${1:-}" == "--install" || -d "$INSTALLED" || -d "$LEGACY_INSTALLED" ]]; then
   WAS_RUNNING=0
   if pgrep -fx "$INSTALLED/Contents/MacOS/$APP_NAME" >/dev/null 2>&1; then
     WAS_RUNNING=1
     pkill -fx "$INSTALLED/Contents/MacOS/$APP_NAME" >/dev/null 2>&1 || true
     sleep 0.3
   fi
+  if pgrep -fx "$LEGACY_INSTALLED/Contents/MacOS/TabStation" >/dev/null 2>&1; then
+    WAS_RUNNING=1
+    pkill -fx "$LEGACY_INSTALLED/Contents/MacOS/TabStation" >/dev/null 2>&1 || true
+    sleep 0.3
+  fi
+  rm -rf "$LEGACY_INSTALLED" "$ROOT/dist/TabStation.app"
   rm -rf "$INSTALLED"
   cp -R "$APP" "$INSTALLED"
   xattr -cr "$INSTALLED" 2>/dev/null || true
@@ -167,7 +188,7 @@ echo
 echo "Next steps:"
 echo "  1. Grant Accessibility + Screen Recording in System Settings"
 echo "     (the menu bar icon links straight to both panes), then choose"
-echo "     'Relaunch TabStation' from the same menu."
+echo "     'Relaunch AltDeck' from the same menu."
 echo "  2. Hold the shortcut and tap Tab."
 echo
 echo "Run the installed copy, not dist/ — a leftover copy elsewhere will not"

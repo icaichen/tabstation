@@ -1,5 +1,5 @@
 /**
- * TabStation — Interactive Engine
+ * AltDeck — Interactive Engine
  * Apple-Grade Precision • Keyboard Sandbox • Micro-Interactions
  */
 
@@ -55,19 +55,19 @@ function initSandboxSwitcher() {
   const appWindows = [
     {
       id: 0,
-      title: "PreferencesWindowController.swift — TabStation",
+      title: "PreferencesWindowController.swift — AltDeck",
       app: "Xcode",
       icon: "assets/app-icon.png",
       badge: "SwiftPM",
-      codePreview: `// TabStation Settings & Hotkey Orchestration\nfinal class PreferencesWindowController: NSWindowController {\n    override func windowDidLoad() {\n        super.windowDidLoad()\n        setupHotKeyInterceptor()\n    }\n}`
+      codePreview: `// AltDeck Settings & Hotkey Orchestration\nfinal class PreferencesWindowController: NSWindowController {\n    override func windowDidLoad() {\n        super.windowDidLoad()\n        setupHotKeyInterceptor()\n    }\n}`
     },
     {
       id: 1,
-      title: "icaichen/tabstation: Native macOS Window Switcher",
+      title: "icaichen/altdeck: Native macOS Window Switcher",
       app: "Google Chrome",
       icon: "https://cdn.simpleicons.org/googlechrome/ffffff",
       badge: "GitHub PR #42",
-      codePreview: `<!DOCTYPE html>\n<html>\n  <head><title>TabStation Repository</title></head>\n  <body>\n    <h1>The window switcher macOS was destined to have.</h1>\n  </body>\n</html>`
+      codePreview: `<!DOCTYPE html>\n<html>\n  <head><title>AltDeck Repository</title></head>\n  <body>\n    <h1>The window switcher macOS was destined to have.</h1>\n  </body>\n</html>`
     },
     {
       id: 2,
@@ -75,14 +75,14 @@ function initSandboxSwitcher() {
       app: "Terminal",
       icon: "https://cdn.simpleicons.org/apple/ffffff",
       badge: "PID 4192",
-      codePreview: `$ ./build-app.sh release\n[✓] Building TabStation (release mode)...\n[✓] ScreenCaptureKit framework linked.\n[✓] Ad-hoc codesign verified.\n[✓] App: /Applications/TabStation.app ready.`
+      codePreview: `$ ./build-app.sh release\n[✓] Building AltDeck (release mode)...\n[✓] ScreenCaptureKit framework linked.\n[✓] Ad-hoc codesign verified.\n[✓] App: /Applications/AltDeck.app ready.`
     },
     {
       id: 3,
       title: "Design System: Liquid Glass Tokens",
       app: "Figma",
       icon: "https://cdn.simpleicons.org/figma/ffffff",
-      badge: "TabStation HUD",
+      badge: "AltDeck HUD",
       codePreview: `// Native Glass Design Tokens\nconst Tokens = {\n  Surface: 'NSGlassEffectView (.regular / .clear)',\n  HUD_CornerRadius: 22,\n  DismissLatency: '< 1ms Synchronous'\n};`
     }
   ];
@@ -90,11 +90,11 @@ function initSandboxSwitcher() {
   const browserTabs = [
     {
       id: 0,
-      title: "icaichen/tabstation — GitHub",
+      title: "icaichen/altdeck — GitHub",
       app: "Google Chrome • github.com",
       icon: "https://cdn.simpleicons.org/googlechrome/4285f4",
       badge: "Window 1 · Tab 1",
-      codePreview: `// TabStation BrowserTabService (Batch AppleEvents)\n// Instant switching to Chrome Window 1, Tab 1\nhttps://github.com/icaichen/tabstation`
+      codePreview: `// AltDeck BrowserTabService (Batch AppleEvents)\n// Instant switching to Chrome Window 1, Tab 1\nhttps://github.com/icaichen/tabstation`
     },
     {
       id: 1,
@@ -106,7 +106,7 @@ function initSandboxSwitcher() {
     },
     {
       id: 2,
-      title: "Linear — TabStation v1.0",
+      title: "Linear — AltDeck v1.0",
       app: "Arc • linear.app",
       icon: "https://cdn.simpleicons.org/arc/fcbf49",
       badge: "Window 1 · Tab 2",
@@ -118,7 +118,7 @@ function initSandboxSwitcher() {
       app: "Google Chrome • figma.com",
       icon: "https://cdn.simpleicons.org/figma/f24e1e",
       badge: "Window 2 · Tab 1",
-      codePreview: `// Figma Design Tokens\nhttps://www.figma.com/file/tabstation-hud-v1`
+      codePreview: `// Figma Design Tokens\nhttps://www.figma.com/file/altdeck-hud-v1`
     }
   ];
 
