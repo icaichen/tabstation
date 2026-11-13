@@ -62,7 +62,7 @@ function initSandboxSwitcher() {
     },
     {
       id: 1,
-      title: "chencai/tabstation: Native macOS Window Switcher",
+      title: "icaichen/tabstation: Native macOS Window Switcher",
       app: "Google Chrome",
       icon: "https://cdn.simpleicons.org/googlechrome/ffffff",
       badge: "GitHub PR #42",
@@ -342,7 +342,7 @@ function initSandboxSwitcher() {
 function initCopyButtons() {
   document.querySelectorAll(".copy-btn, .btn-copy-install").forEach((btn) => {
     btn.addEventListener("click", (e) => {
-      const textToCopy = btn.getAttribute("data-copy") || "git clone https://github.com/chencai/tabstation.git && cd tabstation && ./build-app.sh";
+      const textToCopy = btn.getAttribute("data-copy") || "git clone https://github.com/icaichen/tabstation.git && cd tabstation && ./build-app.sh";
       navigator.clipboard.writeText(textToCopy).then(() => {
         const originalHTML = btn.innerHTML;
         btn.innerHTML = `✓ Copied`;
