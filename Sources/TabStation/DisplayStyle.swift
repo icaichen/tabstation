@@ -7,9 +7,9 @@ enum DisplayStyle: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .full: return "Thumbnails & Titles"
-        case .thumbnailsOnly: return "Thumbnails Only"
-        case .iconsOnly: return "App Icons Only"
+        case .full: return L10n.t("Thumbnails & Titles", "缩略图与标题")
+        case .thumbnailsOnly: return L10n.t("Thumbnails Only", "仅缩略图")
+        case .iconsOnly: return L10n.t("App Icons Only", "仅应用图标")
         }
     }
 
@@ -49,9 +49,9 @@ enum ThumbnailSize: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .small: return "Small"
-        case .medium: return "Medium"
-        case .large: return "Large"
+        case .small: return L10n.t("Small", "小")
+        case .medium: return L10n.t("Medium", "中")
+        case .large: return L10n.t("Large", "大")
         }
     }
 
@@ -109,9 +109,9 @@ enum AppearanceTheme: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .system: return "System"
-        case .light: return "Light"
-        case .dark: return "Dark"
+        case .system: return L10n.t("System", "跟随系统")
+        case .light: return L10n.t("Light", "浅色")
+        case .dark: return L10n.t("Dark", "深色")
         }
     }
 
@@ -131,9 +131,9 @@ enum BackgroundStyle: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .frosted: return "Liquid Glass"
-        case .clear: return "Clear Glass"
-        case .tinted: return "Solid"
+        case .frosted: return L10n.t("Liquid Glass", "液态玻璃")
+        case .clear: return L10n.t("Clear Glass", "通透玻璃")
+        case .tinted: return L10n.t("Solid", "纯色背景")
         }
     }
 }
@@ -150,14 +150,14 @@ enum AccentColorChoice: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .system: return "System"
-        case .graphite: return "Graphite"
-        case .blue: return "Blue"
-        case .purple: return "Purple"
-        case .pink: return "Pink"
-        case .orange: return "Orange"
-        case .green: return "Green"
-        case .custom: return "Custom"
+        case .system: return L10n.t("System", "跟随系统")
+        case .graphite: return L10n.t("Graphite", "石墨灰")
+        case .blue: return L10n.t("Blue", "蓝色")
+        case .purple: return L10n.t("Purple", "紫色")
+        case .pink: return L10n.t("Pink", "粉色")
+        case .orange: return L10n.t("Orange", "橙色")
+        case .green: return L10n.t("Green", "绿色")
+        case .custom: return L10n.t("Custom", "自定义")
         }
     }
 

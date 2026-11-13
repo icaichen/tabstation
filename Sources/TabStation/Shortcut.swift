@@ -105,15 +105,15 @@ enum ShortcutRole: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .primary: return "Shortcut 1"
-        case .sameApp: return "Shortcut 2"
+        case .primary: return L10n.t("Shortcut 1", "快捷键 1")
+        case .sameApp: return L10n.t("Shortcut 2", "快捷键 2")
         }
     }
 
     var subtitle: String {
         switch self {
-        case .primary: return "Cycle through windows of open apps."
-        case .sameApp: return "Cycle only between windows of the frontmost app."
+        case .primary: return L10n.t("Cycle through windows of open apps.", "在已打开应用的窗口间切换。")
+        case .sameApp: return L10n.t("Cycle only between windows of the frontmost app.", "仅在当前最前应用的窗口间切换。")
         }
     }
 
@@ -139,8 +139,8 @@ enum WindowScope: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .allApps: return "All apps"
-        case .activeApp: return "Active app"
+        case .allApps: return L10n.t("All apps", "全部应用")
+        case .activeApp: return L10n.t("Active app", "仅当前应用")
         }
     }
 }
@@ -166,16 +166,20 @@ enum ShortcutValidator {
         let modifiers = shortcut.normalized
 
         if modifiers.isEmpty {
-            return "Add at least one modifier — ⌃, ⌥, ⇧ or ⌘."
+            return L10n.t("Add at least one modifier — ⌃, ⌥, ⇧ or ⌘.", "请至少添加一个修饰键 — ⌃、⌥、⇧ 或 ⌘。")
         }
         if KeyCode.modifierKeys.contains(shortcut.keyCode) {
-            return "\(KeyCode.name(for: shortcut.keyCode)) on its own can't be a shortcut."
+            let name = KeyCode.name(for: shortcut.keyCode)
+            return L10n.t("\(name) on its own can't be a shortcut.", "不能单独使用 \(name) 作为快捷键。")
         }
         if shortcut.keyCode == KeyCode.escape {
-            return "esc is reserved for cancelling."
+            return L10n.t("esc is reserved for cancelling.", "esc 键已保留用于取消切换。")
         }
         if modifiers == [.command] && [0, 6, 7, 8, 9].contains(shortcut.keyCode) {
-            return "⌘Z, ⌘C, ⌘V, ⌘X, ⌘A are standard editing shortcuts — pick a different key."
+            return L10n.t(
+                "⌘Z, ⌘C, ⌘V, ⌘X, ⌘A are standard editing shortcuts — pick a different key.",
+                "⌘Z、⌘C、⌘V、⌘X、⌘A 为系统编辑快捷键，请换用其他按键。"
+            )
         }
         return nil
     }
@@ -191,7 +195,10 @@ enum ShortcutValidator {
         guard modifiers.contains(.command) else { return nil }
 
         if modifiers == [.command] && shortcut.keyCode == KeyCode.space {
-            return "⌘Space opens Spotlight. AltDeck will take it over while it's running."
+            return L10n.t(
+                "⌘Space opens Spotlight. AltDeck will take it over while it's running.",
+                "⌘Space 默认用于打开聚焦搜索，AltDeck 运行时将临时接管该快捷键。"
+            )
         }
         return nil
     }

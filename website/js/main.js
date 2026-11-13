@@ -144,7 +144,13 @@ function initSandboxSwitcher() {
     targetCard.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
 
     if (feedbackStatus && showToast) {
-      feedbackStatus.textContent = `Selected: ${windows[currentIndex].app} — ${windows[currentIndex].title.substring(0, 36)}...`;
+      const i18n = window.AltDeckI18n;
+      const w = windows[currentIndex];
+      const appName = i18n ? i18n.translateText(w.app) : w.app;
+      const titleText = (i18n ? i18n.translateText(w.title) : w.title).substring(0, 36);
+      feedbackStatus.textContent = i18n
+        ? i18n.t(`Selected: ${appName} — ${titleText}...`, `已选中：${appName} — ${titleText}...`)
+        : `Selected: ${appName} — ${titleText}...`;
     }
 
     if (quickLookVisible) {
@@ -266,23 +272,25 @@ function initSandboxSwitcher() {
       const titleEl = card.querySelector(".card-title");
       const appEl = card.querySelector(".card-app-name");
       const iconEl = card.querySelector(".card-app-icon-badge");
+      const i18n = window.AltDeckI18n;
       if (browserTabsMode) {
         const item = browserTabs[idx];
-        if (titleEl) titleEl.textContent = item.title;
-        if (appEl) appEl.textContent = item.app;
+        if (titleEl) titleEl.textContent = i18n ? i18n.translateText(item.title) : item.title;
+        if (appEl) appEl.textContent = i18n ? i18n.translateText(item.app) : item.app;
         if (iconEl) iconEl.setAttribute("src", item.icon);
       } else {
         const snap = defaultCardSnapshots[idx];
-        if (titleEl) titleEl.textContent = snap.title;
-        if (appEl) appEl.textContent = snap.app;
+        if (titleEl) titleEl.textContent = i18n ? i18n.translateText(snap.title) : snap.title;
+        if (appEl) appEl.textContent = i18n ? i18n.translateText(snap.app) : snap.app;
         if (iconEl && snap.iconSrc) iconEl.setAttribute("src", snap.iconSrc);
       }
     });
     updateSelection(0, false);
     if (feedbackStatus) {
+      const i18n = window.AltDeckI18n;
       feedbackStatus.textContent = browserTabsMode
-        ? "Browser Tabs (4) — Press S to return to app windows"
-        : "Showing all app windows (Default) — Press S for Browser Tabs";
+        ? (i18n ? i18n.t("Browser Tabs (4) — Press S to return to app windows", "浏览器标签页（4）— 再按 S 返回应用窗口") : "Browser Tabs (4) — Press S to return to app windows")
+        : (i18n ? i18n.t("Showing all app windows (Default) — Press S for Browser Tabs", "显示全部应用窗口（默认）— 按 S 切换浏览器标签页") : "Showing all app windows (Default) — Press S for Browser Tabs");
     }
   }
   if (btnPip) btnPip.addEventListener("click", () => togglePiP());
@@ -319,7 +327,13 @@ function initSandboxSwitcher() {
         quickLookOverlay.style.display = "block";
         quickLookOverlay.classList.add("active");
         if (btnQuickLook) btnQuickLook.classList.add("active");
-        if (feedbackStatus) feedbackStatus.textContent = `Quick Look: Expanded view for ${windows[currentIndex].app}`;
+        if (feedbackStatus) {
+          const i18n = window.AltDeckI18n;
+          const appName = i18n ? i18n.translateText(windows[currentIndex].app) : windows[currentIndex].app;
+          feedbackStatus.textContent = i18n
+            ? i18n.t(`Quick Look: Expanded view for ${appName}`, `快速预览：已展开 ${appName}`)
+            : `Quick Look: Expanded view for ${appName}`;
+        }
       } else {
         quickLookOverlay.classList.remove("active");
         quickLookOverlay.style.display = "none";
@@ -330,11 +344,13 @@ function initSandboxSwitcher() {
 
   function renderQuickLook() {
     const win = windows[currentIndex];
+    const i18n = window.AltDeckI18n;
     const qTitle = document.getElementById("ql-title");
     const qApp = document.getElementById("ql-app");
     const qCode = document.getElementById("ql-code");
-    if (qTitle) qTitle.textContent = win.title;
-    if (qApp) qApp.textContent = `${win.app} • ${win.badge}`;
+    const appText = i18n ? i18n.translateText(win.app) : win.app;
+    if (qTitle) qTitle.textContent = i18n ? i18n.translateText(win.title) : win.title;
+    if (qApp) qApp.textContent = `${appText} • ${win.badge}`;
     if (qCode) qCode.textContent = win.codePreview;
   }
 
@@ -343,12 +359,18 @@ function initSandboxSwitcher() {
     if (pipOverlay) {
       if (pipVisible) {
         const win = windows[currentIndex];
-        document.getElementById("pip-title").textContent = win.title;
-        document.getElementById("pip-app").textContent = win.app;
+        const i18n = window.AltDeckI18n;
+        const appText = i18n ? i18n.translateText(win.app) : win.app;
+        document.getElementById("pip-title").textContent = i18n ? i18n.translateText(win.title) : win.title;
+        document.getElementById("pip-app").textContent = appText;
         pipOverlay.style.display = "block";
         pipOverlay.classList.add("active");
         if (btnPip) btnPip.classList.add("active");
-        if (feedbackStatus) feedbackStatus.textContent = `Pinned PiP: Floating Picture-in-Picture window activated for ${win.app}`;
+        if (feedbackStatus) {
+          feedbackStatus.textContent = i18n
+            ? i18n.t(`Pinned PiP: Floating Picture-in-Picture window activated for ${appText}`, `置顶画中画：已为 ${appText} 开启实时悬浮窗`)
+            : `Pinned PiP: Floating Picture-in-Picture window activated for ${appText}`;
+        }
       } else {
         pipOverlay.classList.remove("active");
         pipOverlay.style.display = "none";
@@ -358,13 +380,19 @@ function initSandboxSwitcher() {
   }
 
   function triggerSnap(zone) {
+    const i18n = window.AltDeckI18n;
+    const appText = i18n ? i18n.translateText(windows[currentIndex].app) : windows[currentIndex].app;
     if (snapNotice) {
-      snapNotice.textContent = `⚡ Snapped [${windows[currentIndex].app}] to ${zone}`;
+      snapNotice.textContent = i18n
+        ? i18n.t(`⚡ Snapped [${appText}] to ${zone}`, `⚡ 已将 [${appText}] 贴靠至 ${zone}`)
+        : `⚡ Snapped [${appText}] to ${zone}`;
       snapNotice.classList.add("show");
       setTimeout(() => snapNotice.classList.remove("show"), 2400);
     }
     if (feedbackStatus) {
-      feedbackStatus.textContent = `Window Grid: Snapped to ${zone}`;
+      feedbackStatus.textContent = i18n
+        ? i18n.t(`Window Grid: Snapped to ${zone}`, `窗口网格：已贴靠至 ${zone}`)
+        : `Window Grid: Snapped to ${zone}`;
     }
   }
 
@@ -376,7 +404,13 @@ function initSandboxSwitcher() {
       setTimeout(() => {
         card.style.display = "none";
         updateSelection(index === cards.length - 1 ? 0 : index);
-        if (feedbackStatus) feedbackStatus.textContent = `Closed window: ${windows[index].title.substring(0, 30)}...`;
+        if (feedbackStatus) {
+          const i18n = window.AltDeckI18n;
+          const titleText = (i18n ? i18n.translateText(windows[index].title) : windows[index].title).substring(0, 30);
+          feedbackStatus.textContent = i18n
+            ? i18n.t(`Closed window: ${titleText}...`, `已关闭窗口：${titleText}...`)
+            : `Closed window: ${titleText}...`;
+        }
       }, 200);
     }
   }
@@ -395,7 +429,12 @@ function initSandboxSwitcher() {
       isGhost = !isGhost;
       pipGhostBtn.classList.toggle("active", isGhost);
       pipHud.classList.toggle("ghost-mode", isGhost);
-      if (feedbackStatus) feedbackStatus.textContent = isGhost ? "PiP: Ghost Mode Enabled (Clicks pass through to background)" : "PiP: Normal Click Mode Enabled";
+      if (feedbackStatus) {
+        const i18n = window.AltDeckI18n;
+        feedbackStatus.textContent = isGhost
+          ? (i18n ? i18n.t("PiP: Ghost Mode Enabled (Clicks pass through to background)", "画中画：已开启幽灵模式（鼠标点击可穿透）") : "PiP: Ghost Mode Enabled (Clicks pass through to background)")
+          : (i18n ? i18n.t("PiP: Normal Click Mode Enabled", "画中画：已恢复正常点击模式") : "PiP: Normal Click Mode Enabled");
+      }
     });
   }
 
@@ -407,7 +446,12 @@ function initSandboxSwitcher() {
       else pipOpacity = 1.0;
 
       pipHud.style.opacity = pipOpacity;
-      if (feedbackStatus) feedbackStatus.textContent = `PiP Opacity set to ${Math.round(pipOpacity * 100)}%`;
+      if (feedbackStatus) {
+        const i18n = window.AltDeckI18n;
+        feedbackStatus.textContent = i18n
+          ? i18n.t(`PiP Opacity set to ${Math.round(pipOpacity * 100)}%`, `画中画不透明度已设为 ${Math.round(pipOpacity * 100)}%`)
+          : `PiP Opacity set to ${Math.round(pipOpacity * 100)}%`;
+      }
     });
   }
 
@@ -430,7 +474,8 @@ function initCopyButtons() {
       const textToCopy = btn.getAttribute("data-copy") || "git clone https://github.com/icaichen/tabstation.git && cd tabstation && ./build-app.sh";
       navigator.clipboard.writeText(textToCopy).then(() => {
         const originalHTML = btn.innerHTML;
-        btn.innerHTML = `✓ Copied`;
+        const i18n = window.AltDeckI18n;
+        btn.innerHTML = i18n ? i18n.t("✓ Copied", "✓ 已复制") : "✓ Copied";
         btn.classList.add("copied");
         setTimeout(() => {
           btn.innerHTML = originalHTML;

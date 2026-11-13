@@ -22,20 +22,20 @@ enum WindowGridManager {
 
         var displayName: String {
             switch self {
-            case .leftHalf: return "Left Half (1/2)"
-            case .rightHalf: return "Right Half (1/2)"
-            case .topHalf: return "Top Half"
-            case .bottomHalf: return "Bottom Half"
-            case .maximize: return "Maximized"
-            case .center: return "Centered (70%)"
-            case .leftThird: return "Left Third (1/3)"
-            case .leftTwoThirds: return "Left Two-Thirds (2/3)"
-            case .rightThird: return "Right Third (1/3)"
-            case .rightTwoThirds: return "Right Two-Thirds (2/3)"
-            case .topLeftQuarter: return "Top-Left Quarter"
-            case .topRightQuarter: return "Top-Right Quarter"
-            case .bottomLeftQuarter: return "Bottom-Left Quarter"
-            case .bottomRightQuarter: return "Bottom-Right Quarter"
+            case .leftHalf: return L10n.t("Left Half (1/2)", "左半屏 (1/2)")
+            case .rightHalf: return L10n.t("Right Half (1/2)", "右半屏 (1/2)")
+            case .topHalf: return L10n.t("Top Half", "上半屏")
+            case .bottomHalf: return L10n.t("Bottom Half", "下半屏")
+            case .maximize: return L10n.t("Maximized", "最大化")
+            case .center: return L10n.t("Centered (70%)", "居中 (70%)")
+            case .leftThird: return L10n.t("Left Third (1/3)", "左侧三分之一 (1/3)")
+            case .leftTwoThirds: return L10n.t("Left Two-Thirds (2/3)", "左侧三分之二 (2/3)")
+            case .rightThird: return L10n.t("Right Third (1/3)", "右侧三分之一 (1/3)")
+            case .rightTwoThirds: return L10n.t("Right Two-Thirds (2/3)", "右侧三分之二 (2/3)")
+            case .topLeftQuarter: return L10n.t("Top-Left Quarter", "左上四分之一")
+            case .topRightQuarter: return L10n.t("Top-Right Quarter", "右上四分之一")
+            case .bottomLeftQuarter: return L10n.t("Bottom-Left Quarter", "左下四分之一")
+            case .bottomRightQuarter: return L10n.t("Bottom-Right Quarter", "右下四分之一")
             }
         }
     }
@@ -51,7 +51,7 @@ enum WindowGridManager {
     @discardableResult
     static func snap(window: WindowInfo, to zone: SnapZone, targetScreen: NSScreen? = nil) -> String {
         let screens = NSScreen.screens
-        guard !screens.isEmpty else { return "No screens detected" }
+        guard !screens.isEmpty else { return L10n.t("No screens detected", "未检测到显示器") }
 
         // Save original frame if first time snapping this window
         if originalFrames[window.id] == nil {
@@ -64,17 +64,17 @@ enum WindowGridManager {
         let targetRect = calculateTargetRect(for: zone, in: quartzVis)
 
         guard applyRect(targetRect, to: window) else {
-            return "Accessibility access denied"
+            return L10n.t("Accessibility access denied", "缺少辅助功能权限")
         }
 
         lastSnapWindowID = window.id
         lastSnapZone = zone
         lastSnapTime = ProcessInfo.processInfo.systemUptime
 
-        let screenName = screen.localizedName.isEmpty ? "Display" : screen.localizedName
+        let screenName = screen.localizedName.isEmpty ? L10n.t("Display", "显示器") : screen.localizedName
         return screens.count > 1
-            ? "Snapped \(window.ownerName) to \(zone.displayName) on \(screenName)"
-            : "Snapped \(window.ownerName) to \(zone.displayName)"
+            ? L10n.t("Snapped \(window.ownerName) to \(zone.displayName) on \(screenName)", "已将 \(window.ownerName) 贴靠至 \(screenName) \(zone.displayName)")
+            : L10n.t("Snapped \(window.ownerName) to \(zone.displayName)", "已将 \(window.ownerName) 贴靠至\(zone.displayName)")
     }
 
     /// Cycles left half -> left third -> left two-thirds on consecutive presses.
@@ -140,7 +140,7 @@ enum WindowGridManager {
                 lastSnapWindowID = window.id
                 lastSnapZone = nil
                 lastSnapTime = now
-                return "Restored Original Frame"
+                return L10n.t("Restored Original Frame", "已恢复窗口原始尺寸")
             }
         }
         return snap(window: window, to: .center, targetScreen: targetScreen)

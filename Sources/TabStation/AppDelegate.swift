@@ -121,7 +121,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 accessibilityDescription: "AltDeck"
             )
             button.image?.isTemplate = true
-            button.toolTip = "AltDeck — hold ⌥ and tap Tab"
+            button.toolTip = L10n.t("AltDeck — hold ⌥ and tap Tab", "AltDeck — 按住 ⌥ 点按 Tab")
         }
 
         let menu = NSMenu()
@@ -138,7 +138,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             switch role {
             case .primary:
                 self.interceptor.primaryShortcut = shortcut
-                self.statusItem?.button?.toolTip = "AltDeck — hold \(shortcut.displayString)"
+                self.statusItem?.button?.toolTip = L10n.t(
+                    "AltDeck — hold \(shortcut.displayString)",
+                    "AltDeck — 按住 \(shortcut.displayString)"
+                )
             case .sameApp:
                 self.interceptor.sameAppShortcut = shortcut
             }
@@ -261,12 +264,12 @@ extension AppDelegate: NSMenuDelegate {
         menu.addItem(.separator())
 
         menu.addItem(permissionRow(
-            label: "Accessibility",
+            label: L10n.t("Accessibility", "辅助功能"),
             granted: accessibility,
             action: #selector(openAccessibilitySettings)
         ))
         menu.addItem(permissionRow(
-            label: "Screen Recording",
+            label: L10n.t("Screen Recording", "屏幕录制"),
             granted: screenRecording,
             action: #selector(openScreenRecordingSettings)
         ))
@@ -274,7 +277,7 @@ extension AppDelegate: NSMenuDelegate {
         if !accessibility || !screenRecording {
             menu.addItem(.separator())
             let request = NSMenuItem(
-                title: "Request Permissions…",
+                title: L10n.t("Request Permissions…", "请求系统权限…"),
                 action: #selector(requestPermissions),
                 keyEquivalent: ""
             )
@@ -284,8 +287,9 @@ extension AppDelegate: NSMenuDelegate {
 
         menu.addItem(.separator())
 
+        let shortcutStr = ShortcutStore.load().displayString
         let shortcuts = NSMenuItem(
-            title: "Hold \(ShortcutStore.load().displayString) to switch windows",
+            title: L10n.t("Hold \(shortcutStr) to switch windows", "按住 \(shortcutStr) 切换窗口"),
             action: nil,
             keyEquivalent: ""
         )
@@ -295,7 +299,7 @@ extension AppDelegate: NSMenuDelegate {
         menu.addItem(.separator())
 
         let overrideItem = NSMenuItem(
-            title: "Override ⌘Tab",
+            title: L10n.t("Override ⌘Tab", "接管系统 ⌘Tab"),
             action: #selector(toggleOverrideCommandTab),
             keyEquivalent: ""
         )
@@ -304,7 +308,7 @@ extension AppDelegate: NSMenuDelegate {
         menu.addItem(overrideItem)
 
         let minItem = NSMenuItem(
-            title: "Show Minimized Windows",
+            title: L10n.t("Show Minimized Windows", "显示已最小化窗口"),
             action: #selector(toggleShowMinimized),
             keyEquivalent: ""
         )
@@ -313,7 +317,7 @@ extension AppDelegate: NSMenuDelegate {
         menu.addItem(minItem)
 
         let includeTabsItem = NSMenuItem(
-            title: "Show Browser Tabs in Main List",
+            title: L10n.t("Show Browser Tabs in Main List", "默认在主列表中显示浏览器标签页"),
             action: #selector(toggleIncludeBrowserTabs),
             keyEquivalent: ""
         )
@@ -322,7 +326,7 @@ extension AppDelegate: NSMenuDelegate {
         menu.addItem(includeTabsItem)
 
         let loginItem = NSMenuItem(
-            title: "Launch at Login",
+            title: L10n.t("Launch at Login", "开机自动启动"),
             action: #selector(toggleLaunchAtLogin),
             keyEquivalent: ""
         )
@@ -332,16 +336,16 @@ extension AppDelegate: NSMenuDelegate {
 
         if PinManager.shared.hasPinnedWindows {
             menu.addItem(.separator())
-            let pipTitle = NSMenuItem(title: "Picture-in-Picture Active", action: nil, keyEquivalent: "")
+            let pipTitle = NSMenuItem(title: L10n.t("Picture-in-Picture Active", "画中画置顶运行中"), action: nil, keyEquivalent: "")
             pipTitle.isEnabled = false
             menu.addItem(pipTitle)
 
             if PinManager.shared.hasGhostWindows {
-                let unghost = NSMenuItem(title: "Disable Ghost Mode (Restore Clicks)", action: #selector(disableGhostMode), keyEquivalent: "")
+                let unghost = NSMenuItem(title: L10n.t("Disable Ghost Mode (Restore Clicks)", "关闭幽灵模式（恢复点击）"), action: #selector(disableGhostMode), keyEquivalent: "")
                 unghost.target = self
                 menu.addItem(unghost)
             }
-            let closePip = NSMenuItem(title: "Close All PiP Windows", action: #selector(closeAllPiP), keyEquivalent: "")
+            let closePip = NSMenuItem(title: L10n.t("Close All PiP Windows", "关闭全部画中画窗口"), action: #selector(closeAllPiP), keyEquivalent: "")
             closePip.target = self
             menu.addItem(closePip)
         }
@@ -349,19 +353,19 @@ extension AppDelegate: NSMenuDelegate {
         menu.addItem(.separator())
 
         // Display Style submenu
-        let styleMenuItem = NSMenuItem(title: "Display Mode", action: nil, keyEquivalent: "")
+        let styleMenuItem = NSMenuItem(title: L10n.t("Display Mode", "显示模式"), action: nil, keyEquivalent: "")
         let styleSubmenu = NSMenu()
-        let fullItem = NSMenuItem(title: "Thumbnails & Titles", action: #selector(setDisplayStyleFull), keyEquivalent: "")
+        let fullItem = NSMenuItem(title: DisplayStyle.full.title, action: #selector(setDisplayStyleFull), keyEquivalent: "")
         fullItem.target = self
         fullItem.state = DisplayStyle.current == .full ? .on : .off
         styleSubmenu.addItem(fullItem)
 
-        let thumbOnlyItem = NSMenuItem(title: "Thumbnails Only", action: #selector(setDisplayStyleThumbnailsOnly), keyEquivalent: "")
+        let thumbOnlyItem = NSMenuItem(title: DisplayStyle.thumbnailsOnly.title, action: #selector(setDisplayStyleThumbnailsOnly), keyEquivalent: "")
         thumbOnlyItem.target = self
         thumbOnlyItem.state = DisplayStyle.current == .thumbnailsOnly ? .on : .off
         styleSubmenu.addItem(thumbOnlyItem)
 
-        let iconsOnlyItem = NSMenuItem(title: "App Icons Only", action: #selector(setDisplayStyleIconsOnly), keyEquivalent: "")
+        let iconsOnlyItem = NSMenuItem(title: DisplayStyle.iconsOnly.title, action: #selector(setDisplayStyleIconsOnly), keyEquivalent: "")
         iconsOnlyItem.target = self
         iconsOnlyItem.state = DisplayStyle.current == .iconsOnly ? .on : .off
         styleSubmenu.addItem(iconsOnlyItem)
@@ -369,19 +373,19 @@ extension AppDelegate: NSMenuDelegate {
         menu.addItem(styleMenuItem)
 
         // Thumbnail Size submenu
-        let sizeMenuItem = NSMenuItem(title: "Thumbnail Size", action: nil, keyEquivalent: "")
+        let sizeMenuItem = NSMenuItem(title: L10n.t("Thumbnail Size", "预览尺寸"), action: nil, keyEquivalent: "")
         let sizeSubmenu = NSMenu()
-        let smallItem = NSMenuItem(title: "Small", action: #selector(setThumbnailSizeSmall), keyEquivalent: "")
+        let smallItem = NSMenuItem(title: ThumbnailSize.small.title, action: #selector(setThumbnailSizeSmall), keyEquivalent: "")
         smallItem.target = self
         smallItem.state = ThumbnailSize.current == .small ? .on : .off
         sizeSubmenu.addItem(smallItem)
 
-        let mediumItem = NSMenuItem(title: "Medium", action: #selector(setThumbnailSizeMedium), keyEquivalent: "")
+        let mediumItem = NSMenuItem(title: ThumbnailSize.medium.title, action: #selector(setThumbnailSizeMedium), keyEquivalent: "")
         mediumItem.target = self
         mediumItem.state = ThumbnailSize.current == .medium ? .on : .off
         sizeSubmenu.addItem(mediumItem)
 
-        let largeItem = NSMenuItem(title: "Large", action: #selector(setThumbnailSizeLarge), keyEquivalent: "")
+        let largeItem = NSMenuItem(title: ThumbnailSize.large.title, action: #selector(setThumbnailSizeLarge), keyEquivalent: "")
         largeItem.target = self
         largeItem.state = ThumbnailSize.current == .large ? .on : .off
         sizeSubmenu.addItem(largeItem)
@@ -389,7 +393,7 @@ extension AppDelegate: NSMenuDelegate {
         menu.addItem(sizeMenuItem)
 
         let hintsItem = NSMenuItem(
-            title: "Show Shortcut Hints in Footer",
+            title: L10n.t("Show Shortcut Hints in Footer", "底部显示快捷键提示"),
             action: #selector(toggleShowFooterHints),
             keyEquivalent: ""
         )
@@ -399,24 +403,25 @@ extension AppDelegate: NSMenuDelegate {
 
         menu.addItem(.separator())
 
-        let prefs = NSMenuItem(title: "Preferences…", action: #selector(showPreferences), keyEquivalent: ",")
+        let prefs = NSMenuItem(title: L10n.t("Preferences…", "设置…"), action: #selector(showPreferences), keyEquivalent: ",")
         prefs.target = self
         menu.addItem(prefs)
 
         menu.addItem(.separator())
 
-        let relaunch = NSMenuItem(title: "Relaunch AltDeck", action: #selector(relaunch), keyEquivalent: "r")
+        let relaunch = NSMenuItem(title: L10n.t("Relaunch AltDeck", "重启 AltDeck"), action: #selector(relaunch), keyEquivalent: "r")
         relaunch.target = self
         menu.addItem(relaunch)
 
-        let quit = NSMenuItem(title: "Quit AltDeck", action: #selector(quit), keyEquivalent: "q")
+        let quit = NSMenuItem(title: L10n.t("Quit AltDeck", "退出 AltDeck"), action: #selector(quit), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
     }
 
     private func permissionRow(label: String, granted: Bool, action: Selector) -> NSMenuItem {
+        let stateText = granted ? L10n.t("On", "已开启") : L10n.t("Off", "未开启")
         let item = NSMenuItem(
-            title: "\(label): \(granted ? "On" : "Off")",
+            title: L10n.t("\(label): \(stateText)", "\(label)：\(stateText)"),
             action: granted ? nil : action,
             keyEquivalent: ""
         )

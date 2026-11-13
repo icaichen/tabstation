@@ -10,7 +10,7 @@ enum DisplayDispatcher {
     static func moveToNextDisplay(window: WindowInfo) -> String {
         let screens = NSScreen.screens
         guard screens.count > 1 else {
-            return "Single display detected"
+            return L10n.t("Single display detected", "仅检测到单个显示器")
         }
 
         // Primary screen height is needed to convert Cocoa (bottom-left) to Quartz (top-left)
@@ -72,7 +72,7 @@ enum DisplayDispatcher {
         newY = max(targetVis.origin.y, min(targetVis.origin.y + targetVis.height - newH, newY))
 
         guard let axWindow = WindowActivator.findAXWindow(in: window) else {
-            return "Cannot access window via Accessibility"
+            return L10n.t("Cannot access window via Accessibility", "无法通过辅助功能访问该窗口")
         }
 
         var targetPos = CGPoint(x: newX, y: newY)
@@ -88,8 +88,13 @@ enum DisplayDispatcher {
         AXUIElementPerformAction(axWindow, kAXRaiseAction as CFString)
 
         let targetScreen = screens[targetScreenIndex]
-        let displayName = targetScreen.localizedName.isEmpty ? "Display \(targetScreenIndex + 1)" : targetScreen.localizedName
-        return "Moved to \(displayName) (\(Int(targetVis.width))×\(Int(targetVis.height)))"
+        let displayName = targetScreen.localizedName.isEmpty
+            ? L10n.t("Display \(targetScreenIndex + 1)", "显示器 \(targetScreenIndex + 1)")
+            : targetScreen.localizedName
+        return L10n.t(
+            "Moved to \(displayName) (\(Int(targetVis.width))×\(Int(targetVis.height)))",
+            "已移至 \(displayName) (\(Int(targetVis.width))×\(Int(targetVis.height)))"
+        )
     }
 
     /// Moves the specified window onto the target screen.

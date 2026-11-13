@@ -381,21 +381,23 @@ final class SwitcherController {
         let p = all[.primary] ?? .optionTab
         let s = all[.sameApp] ?? Shortcut(modifiers: [.option], keyCode: KeyCode.grave)
         let activeKey = appFilterEnabled ? s.displayString : p.displayString
-        var list = ["\(activeKey) next"]
+        var list = [L10n.t("\(activeKey) next", "\(activeKey) 下一个")]
         if FeaturePreferences.spaceQuickLookEnabled {
-            list.append("space peek")
+            list.append(L10n.t("space peek", "空格 预览"))
         }
-        list.append(FeaturePreferences.arrowKeySnappingEnabled ? "←/→ snap" : "←/→ select")
+        list.append(FeaturePreferences.arrowKeySnappingEnabled
+            ? L10n.t("←/→ snap", "←/→ 贴靠")
+            : L10n.t("←/→ select", "←/→ 选择"))
         if FeaturePreferences.pinShortcutEnabled {
-            list.append("P pin")
+            list.append(L10n.t("P pin", "P 置顶"))
         }
         if FeaturePreferences.displayMoveShortcutEnabled {
-            list.append("D display")
+            list.append(L10n.t("D display", "D 跨屏"))
         }
         if FeaturePreferences.browserTabsShortcutEnabled {
-            list.append("S tabs")
+            list.append(L10n.t("S tabs", "S 标签页"))
         }
-        list.append("W close")
+        list.append(L10n.t("W close", "W 关闭"))
         return list
     }
 
@@ -729,7 +731,7 @@ final class SwitcherController {
             layoutPanel(on: screen)
             selectedIndex = min(selectedIndex, max(0, visibleWindows.count - 1))
             view.setSelection(selectedIndex, animated: false)
-            showTransientNotice("Showing all windows")
+            showTransientNotice(L10n.t("Showing all windows", "显示全部窗口"))
             return
         }
 
@@ -744,9 +746,12 @@ final class SwitcherController {
             layoutPanel(on: screen)
             selectedIndex = 0
             view.setSelection(0, animated: false)
-            showTransientNotice("Browser Tabs (\(cached.count)) — S to exit")
+            showTransientNotice(L10n.t(
+                "Browser Tabs (\(cached.count)) — S to exit",
+                "浏览器标签页（\(cached.count)）— 再按 S 退出"
+            ))
         } else {
-            showTransientNotice("Loading browser tabs…")
+            showTransientNotice(L10n.t("Loading browser tabs…", "正在加载浏览器标签页…"))
         }
 
         let currentGen = generation
@@ -767,9 +772,12 @@ final class SwitcherController {
                     self.view.setSelection(self.selectedIndex, animated: false)
                     if !fetchResult.deniedBrowsers.isEmpty {
                         let names = fetchResult.deniedBrowsers.joined(separator: ", ")
-                        self.showTransientNotice("Allow Automation for \(names) in Privacy Settings")
+                        self.showTransientNotice(L10n.t(
+                            "Allow Automation for \(names) in Privacy Settings",
+                            "请在系统隐私设置中允许控制 \(names)"
+                        ))
                     } else {
-                        self.showTransientNotice("No open browser tabs found")
+                        self.showTransientNotice(L10n.t("No open browser tabs found", "未检测到打开的浏览器标签页"))
                     }
                     return
                 }
@@ -781,7 +789,10 @@ final class SwitcherController {
                     self.layoutPanel(on: screen)
                     self.selectedIndex = min(self.selectedIndex, max(0, freshTabs.count - 1))
                     self.view.setSelection(self.selectedIndex, animated: false)
-                    self.showTransientNotice("Browser Tabs (\(freshTabs.count)) — S to exit")
+                    self.showTransientNotice(L10n.t(
+                        "Browser Tabs (\(freshTabs.count)) — S to exit",
+                        "浏览器标签页（\(freshTabs.count)）— 再按 S 退出"
+                    ))
                 }
             }
         }

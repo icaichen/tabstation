@@ -212,7 +212,7 @@ final class PinnedWindowContentView: NSView {
         liveDot.wantsLayer = true
         liveDot.layer?.cornerRadius = 3
         liveDot.layer?.backgroundColor = NSColor.systemOrange.cgColor
-        liveDot.toolTip = "Connecting ScreenCaptureKit stream…"
+        liveDot.toolTip = L10n.t("Connecting ScreenCaptureKit stream…", "正在连接 ScreenCaptureKit 实时画面流…")
         titleBar.addSubview(liveDot)
 
         iconView.image = NSRunningApplication(processIdentifier: windowInfo.pid)?.icon
@@ -228,32 +228,41 @@ final class PinnedWindowContentView: NSView {
 
         ghostButton.isBordered = false
         ghostButton.bezelStyle = .regularSquare
-        ghostButton.image = NSImage(systemSymbolName: "cursorarrow.rays", accessibilityDescription: "Ghost Mode (Click-Through)")
-        ghostButton.toolTip = "Ghost Mode (Click-Through)\nLet clicks pass straight through this PiP window"
+        ghostButton.image = NSImage(systemSymbolName: "cursorarrow.rays", accessibilityDescription: L10n.t("Ghost Mode (Click-Through)", "幽灵模式（鼠标穿透）"))
+        ghostButton.toolTip = L10n.t(
+            "Ghost Mode (Click-Through)\nLet clicks pass straight through this PiP window",
+            "幽灵模式（鼠标穿透）\n让鼠标点击直接穿透此画中画悬浮窗"
+        )
         ghostButton.target = self
         ghostButton.action = #selector(toggleGhostMode)
         titleBar.addSubview(ghostButton)
 
         opacityButton.isBordered = false
         opacityButton.bezelStyle = .regularSquare
-        opacityButton.image = NSImage(systemSymbolName: "circle.lefthalf.filled", accessibilityDescription: "Adjust Opacity")
-        opacityButton.toolTip = "Opacity: 100%\nClick to cycle (100% -> 80% -> 55% -> 35%)\nOr scroll wheel over title bar"
+        opacityButton.image = NSImage(systemSymbolName: "circle.lefthalf.filled", accessibilityDescription: L10n.t("Adjust Opacity", "调节不透明度"))
+        opacityButton.toolTip = L10n.t(
+            "Opacity: 100%\nClick to cycle (100% -> 80% -> 55% -> 35%)\nOr scroll wheel over title bar",
+            "不透明度：100%\n点击循环切换（100% -> 80% -> 55% -> 35%）\n或在标题栏上滑动滚轮"
+        )
         opacityButton.target = self
         opacityButton.action = #selector(cycleOpacity)
         titleBar.addSubview(opacityButton)
 
         focusButton.isBordered = false
         focusButton.bezelStyle = .regularSquare
-        focusButton.image = NSImage(systemSymbolName: "arrow.up.forward.app.fill", accessibilityDescription: "Focus Original Window")
-        focusButton.toolTip = "Focus Original Window (Double-click anywhere)"
+        focusButton.image = NSImage(systemSymbolName: "arrow.up.forward.app.fill", accessibilityDescription: L10n.t("Focus Original Window", "聚焦原窗口"))
+        focusButton.toolTip = L10n.t(
+            "Focus Original Window (Double-click anywhere)",
+            "跳转到原窗口（双击画面任意位置）"
+        )
         focusButton.target = self
         focusButton.action = #selector(focusOriginalWindow)
         titleBar.addSubview(focusButton)
 
         closeButton.isBordered = false
         closeButton.bezelStyle = .regularSquare
-        closeButton.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: "Close PiP")
-        closeButton.toolTip = "Close PiP"
+        closeButton.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: L10n.t("Close PiP", "关闭画中画"))
+        closeButton.toolTip = L10n.t("Close PiP", "关闭画中画")
         closeButton.target = self
         closeButton.action = #selector(closeClicked)
         titleBar.addSubview(closeButton)
@@ -344,8 +353,8 @@ final class PinnedWindowContentView: NSView {
             guard let self else { return }
             self.liveDot.layer?.backgroundColor = (isLive ? NSColor.systemGreen : NSColor.systemOrange).cgColor
             self.liveDot.toolTip = isLive
-                ? "ScreenCaptureKit Live Mirror (30fps max)"
-                : "Stream unavailable (showing snapshot)"
+                ? L10n.t("ScreenCaptureKit Live Mirror (30fps max)", "ScreenCaptureKit 实时镜像（最高 30fps）")
+                : L10n.t("Stream unavailable (showing snapshot)", "实时流不可用（当前显示快照）")
         }
 
         Task { [weak self] in
@@ -413,7 +422,10 @@ final class PinnedWindowContentView: NSView {
             let delta = event.scrollingDeltaY * 0.02
             let newAlpha = min(1.0, max(0.25, win.alphaValue + delta))
             win.alphaValue = newAlpha
-            opacityButton.toolTip = "Opacity: \(Int(newAlpha * 100))%\nClick to cycle\nOr scroll wheel over title bar"
+            opacityButton.toolTip = L10n.t(
+                "Opacity: \(Int(newAlpha * 100))%\nClick to cycle\nOr scroll wheel over title bar",
+                "不透明度：\(Int(newAlpha * 100))%\n点击循环切换\n或在标题栏上滑动滚轮"
+            )
             return
         }
         super.scrollWheel(with: event)
@@ -450,7 +462,10 @@ final class PinnedWindowContentView: NSView {
         currentOpacityIndex = (currentOpacityIndex + 1) % opacityLevels.count
         let alpha = opacityLevels[currentOpacityIndex]
         window?.alphaValue = alpha
-        opacityButton.toolTip = "Opacity: \(Int(alpha * 100))%\nClick to cycle\nOr scroll wheel over title bar"
+        opacityButton.toolTip = L10n.t(
+            "Opacity: \(Int(alpha * 100))%\nClick to cycle\nOr scroll wheel over title bar",
+            "不透明度：\(Int(alpha * 100))%\n点击循环切换\n或在标题栏上滑动滚轮"
+        )
     }
 
     @objc private func focusOriginalWindow() {
@@ -558,7 +573,7 @@ final class PinManager {
         if let existing = pinnedPanels[window.id] {
             existing.close()
             pinnedPanels.removeValue(forKey: window.id)
-            return (false, "Unpinned \(window.ownerName)")
+            return (false, L10n.t("Unpinned \(window.ownerName)", "已取消置顶 \(window.ownerName)"))
         }
 
         let panel = PinnedWindowPanel(window: window, on: screen)
@@ -567,7 +582,7 @@ final class PinManager {
         }
         panel.orderFrontRegardless()
         pinnedPanels[window.id] = panel
-        return (true, "Pinned \(window.ownerName) to Live PiP")
+        return (true, L10n.t("Pinned \(window.ownerName) to Live PiP", "已将 \(window.ownerName) 置顶为实时画中画"))
     }
 
     func disableGhostModeForAll() {

@@ -99,11 +99,11 @@ final class ShortcutRowView: NSView {
         subtitleLabel.maximumNumberOfLines = 2
 
         scopePopup.removeAllItems()
-        scopePopup.addItems(withTitles: ["All apps", "Active app"])
+        scopePopup.addItems(withTitles: WindowScope.allCases.map(\.title))
         scopePopup.controlSize = .small
         scopePopup.font = .systemFont(ofSize: 11)
         let currentScope = ShortcutScopeStore.load(role)
-        scopePopup.selectItem(withTitle: currentScope.title)
+        scopePopup.selectItem(at: WindowScope.allCases.firstIndex(of: currentScope) ?? 0)
         scopePopup.target = self
         scopePopup.action = #selector(scopeSelected)
 
@@ -119,8 +119,8 @@ final class ShortcutRowView: NSView {
 
         resetButton.isBordered = false
         resetButton.bezelStyle = .regularSquare
-        resetButton.image = NSImage(systemSymbolName: "arrow.counterclockwise", accessibilityDescription: "Reset to default")
-        resetButton.toolTip = "Reset to default (\(role.defaultShortcut.displayString))"
+        resetButton.image = NSImage(systemSymbolName: "arrow.counterclockwise", accessibilityDescription: L10n.t("Reset to default", "恢复默认"))
+        resetButton.toolTip = L10n.t("Reset to default (\(role.defaultShortcut.displayString))", "恢复默认（\(role.defaultShortcut.displayString)）")
         resetButton.contentTintColor = .secondaryLabelColor
         resetButton.target = self
         resetButton.action = #selector(resetToDefault)
@@ -160,7 +160,7 @@ final class ShortcutRowView: NSView {
 
     func setShortcut(_ shortcut: Shortcut, scope: WindowScope) {
         recorder.setShortcut(shortcut)
-        scopePopup.selectItem(withTitle: scope.title)
+        scopePopup.selectItem(at: WindowScope.allCases.firstIndex(of: scope) ?? 0)
         refreshMessage(for: shortcut)
     }
 
@@ -173,8 +173,8 @@ final class ShortcutRowView: NSView {
     }
 
     @objc private func scopeSelected(_ sender: NSPopUpButton) {
-        let title = sender.titleOfSelectedItem ?? "All apps"
-        let scope: WindowScope = (title == "Active app") ? .activeApp : .allApps
+        let idx = sender.indexOfSelectedItem
+        let scope: WindowScope = (idx == 1) ? .activeApp : .allApps
         ShortcutScopeStore.save(scope, for: role)
         onScopeChange?(scope)
     }
@@ -183,7 +183,7 @@ final class ShortcutRowView: NSView {
         handleChange(role.defaultShortcut)
         let defaultScope: WindowScope = (role == .sameApp) ? .activeApp : .allApps
         ShortcutScopeStore.save(defaultScope, for: role)
-        scopePopup.selectItem(withTitle: defaultScope.title)
+        scopePopup.selectItem(at: WindowScope.allCases.firstIndex(of: defaultScope) ?? 0)
         onScopeChange?(defaultScope)
     }
 
@@ -261,12 +261,13 @@ final class PreferencesWindowController: NSWindowController {
     private let showAllSpacesSwitch = NSSwitch()
     private let showMinimizedSwitch = NSSwitch()
     private let launchAtLoginSwitch = NSSwitch()
+    private let languageControl = NSSegmentedControl()
     private let accessibilityStatusLabel = NSTextField(labelWithString: "")
     private let screenRecordingStatusLabel = NSTextField(labelWithString: "")
     private let automationStatusLabel = NSTextField(labelWithString: "")
 
-    private let resetButton = NSButton(title: "Restore Defaults", target: nil, action: nil)
-    private let doneButton = NSButton(title: "Done", target: nil, action: nil)
+    private let resetButton = NSButton(title: L10n.t("Restore Defaults", "恢复默认设置"), target: nil, action: nil)
+    private let doneButton = NSButton(title: L10n.t("Done", "完成"), target: nil, action: nil)
 
     convenience init() {
         let window = NSWindow(
@@ -275,7 +276,7 @@ final class PreferencesWindowController: NSWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "AltDeck Settings"
+        window.title = L10n.t("AltDeck Settings", "AltDeck 设置")
         window.isReleasedWhenClosed = false
         self.init(window: window)
         buildContent()
@@ -298,10 +299,7 @@ final class PreferencesWindowController: NSWindowController {
         guard let content = window?.contentView else { return }
 
         tabSwitcher.segmentCount = 4
-        tabSwitcher.setLabel("Appearance", forSegment: 0)
-        tabSwitcher.setLabel("Features", forSegment: 1)
-        tabSwitcher.setLabel("Shortcuts", forSegment: 2)
-        tabSwitcher.setLabel("General", forSegment: 3)
+        applyLocalizedChrome()
         tabSwitcher.segmentStyle = .automatic
         tabSwitcher.selectedSegment = 0
         tabSwitcher.target = self
@@ -310,18 +308,7 @@ final class PreferencesWindowController: NSWindowController {
 
         tabView.tabViewType = .noTabsNoBorder
         tabView.translatesAutoresizingMaskIntoConstraints = false
-
-        let specs: [(String, NSView)] = [
-            ("appearance", wrapScrollableTab(buildAppearanceTab())),
-            ("features", wrapScrollableTab(buildFeaturesTab())),
-            ("shortcuts", wrapScrollableTab(buildShortcutsTab())),
-            ("general", wrapScrollableTab(buildGeneralTab())),
-        ]
-        for (id, view) in specs {
-            let item = NSTabViewItem(identifier: id)
-            item.view = view
-            tabView.addTabViewItem(item)
-        }
+        populateTabItems(selecting: 0)
 
         let topSeparator = makeHorizontalSeparator()
         let bottomSeparator = makeHorizontalSeparator()
@@ -374,6 +361,43 @@ final class PreferencesWindowController: NSWindowController {
         ])
     }
 
+    private func applyLocalizedChrome() {
+        window?.title = L10n.t("AltDeck Settings", "AltDeck 设置")
+        tabSwitcher.setLabel(L10n.t("Appearance", "外观"), forSegment: 0)
+        tabSwitcher.setLabel(L10n.t("Features", "功能"), forSegment: 1)
+        tabSwitcher.setLabel(L10n.t("Shortcuts", "快捷键"), forSegment: 2)
+        tabSwitcher.setLabel(L10n.t("General", "通用"), forSegment: 3)
+        resetButton.title = L10n.t("Restore Defaults", "恢复默认设置")
+        doneButton.title = L10n.t("Done", "完成")
+    }
+
+    private func populateTabItems(selecting segment: Int) {
+        while let first = tabView.tabViewItems.first {
+            tabView.removeTabViewItem(first)
+        }
+        let specs: [(String, NSView)] = [
+            ("appearance", wrapScrollableTab(buildAppearanceTab())),
+            ("features", wrapScrollableTab(buildFeaturesTab())),
+            ("shortcuts", wrapScrollableTab(buildShortcutsTab())),
+            ("general", wrapScrollableTab(buildGeneralTab())),
+        ]
+        for (id, view) in specs {
+            let item = NSTabViewItem(identifier: id)
+            item.view = view
+            tabView.addTabViewItem(item)
+        }
+        let clamped = max(0, min(specs.count - 1, segment))
+        tabSwitcher.selectedSegment = clamped
+        tabView.selectTabViewItem(at: clamped)
+    }
+
+    private func rebuildLocalizedUI() {
+        let currentSegment = tabSwitcher.selectedSegment
+        applyLocalizedChrome()
+        populateTabItems(selecting: currentSegment)
+        reload()
+    }
+
     private func wrapScrollableTab(_ innerView: NSView) -> NSView {
         let scroll = NSScrollView()
         scroll.drawsBackground = false
@@ -401,25 +425,28 @@ final class PreferencesWindowController: NSWindowController {
 
     private func buildAppearanceTab() -> NSView {
         displayStyleControl.segmentCount = 3
-        displayStyleControl.setLabel("Thumbnails & Titles", forSegment: 0)
-        displayStyleControl.setLabel("Thumbnails Only", forSegment: 1)
-        displayStyleControl.setLabel("Icons Only", forSegment: 2)
+        displayStyleControl.setLabel(L10n.t("Thumbnails & Titles", "缩略图与标题"), forSegment: 0)
+        displayStyleControl.setLabel(L10n.t("Thumbnails Only", "仅缩略图"), forSegment: 1)
+        displayStyleControl.setLabel(L10n.t("Icons Only", "仅图标"), forSegment: 2)
         displayStyleControl.target = self
         displayStyleControl.action = #selector(displayStyleChanged)
 
         thumbnailSizeControl.segmentCount = 3
-        thumbnailSizeControl.setLabel("Small", forSegment: 0)
-        thumbnailSizeControl.setLabel("Medium", forSegment: 1)
-        thumbnailSizeControl.setLabel("Large", forSegment: 2)
+        thumbnailSizeControl.setLabel(ThumbnailSize.small.title, forSegment: 0)
+        thumbnailSizeControl.setLabel(ThumbnailSize.medium.title, forSegment: 1)
+        thumbnailSizeControl.setLabel(ThumbnailSize.large.title, forSegment: 2)
         thumbnailSizeControl.target = self
         thumbnailSizeControl.action = #selector(thumbnailSizeChanged)
 
-        let layoutCard = makeSectionCard(title: "Layout & Sizing", rows: [
-            makeLabeledRow(label: "Mode", control: displayStyleControl),
-            makeLabeledRow(label: "Tile Size", control: thumbnailSizeControl),
+        let layoutCard = makeSectionCard(title: L10n.t("Layout & Sizing", "布局与尺寸"), rows: [
+            makeLabeledRow(label: L10n.t("Mode", "显示模式"), control: displayStyleControl),
+            makeLabeledRow(label: L10n.t("Tile Size", "卡片尺寸"), control: thumbnailSizeControl),
             makeSwitchRow(
-                title: "Auto-adjust size to fit open windows",
-                subtitle: "Scales tiles cleanly across multiple rows when many windows are open.",
+                title: L10n.t("Auto-adjust size to fit open windows", "根据窗口数量自动缩放尺寸"),
+                subtitle: L10n.t(
+                    "Scales tiles cleanly across multiple rows when many windows are open.",
+                    "当打开较多窗口时自动调整卡片大小并整洁换行。"
+                ),
                 toggle: autoAdjustSizeSwitch,
                 action: #selector(toggleAutoAdjustSize)
             ),
@@ -443,23 +470,27 @@ final class PreferencesWindowController: NSWindowController {
         opacitySlider.target = self
         opacitySlider.action = #selector(opacityChanged)
         opacitySlider.translatesAutoresizingMaskIntoConstraints = false
-        opacitySlider.widthAnchor.constraint(equalToConstant: 230).isActive = true
+        if opacitySlider.constraints.isEmpty {
+            opacitySlider.widthAnchor.constraint(equalToConstant: 230).isActive = true
+        }
 
         opacityValueLabel.font = .monospacedDigitSystemFont(ofSize: 11.5, weight: .medium)
         opacityValueLabel.textColor = .secondaryLabelColor
         opacityValueLabel.alignment = .right
         opacityValueLabel.translatesAutoresizingMaskIntoConstraints = false
-        opacityValueLabel.widthAnchor.constraint(equalToConstant: 40).isActive = true
+        if opacityValueLabel.constraints.isEmpty {
+            opacityValueLabel.widthAnchor.constraint(equalToConstant: 40).isActive = true
+        }
 
         let opacityRowControl = NSStackView(views: [opacitySlider, opacityValueLabel])
         opacityRowControl.orientation = .horizontal
         opacityRowControl.alignment = .centerY
         opacityRowControl.spacing = 8
 
-        let surfaceCard = makeSectionCard(title: "Liquid Glass & Surface", rows: [
-            makeLabeledRow(label: "Theme", control: themeControl),
-            makeLabeledRow(label: "Surface", control: backgroundStyleControl),
-            makeLabeledRow(label: "Tint Density", control: opacityRowControl),
+        let surfaceCard = makeSectionCard(title: L10n.t("Liquid Glass & Surface", "液态玻璃与外观"), rows: [
+            makeLabeledRow(label: L10n.t("Theme", "界面主题"), control: themeControl),
+            makeLabeledRow(label: L10n.t("Surface", "背景材质"), control: backgroundStyleControl),
+            makeLabeledRow(label: L10n.t("Tint Density", "着色浓度"), control: opacityRowControl),
         ])
 
         swatchButtons = AccentColorChoice.presets.map { choice in
@@ -468,10 +499,12 @@ final class PreferencesWindowController: NSWindowController {
 
         customColorWell.target = self
         customColorWell.action = #selector(customColorChanged(_:))
-        customColorWell.toolTip = "Custom Highlight Color"
+        customColorWell.toolTip = L10n.t("Custom Highlight Color", "自定义高亮色")
         customColorWell.translatesAutoresizingMaskIntoConstraints = false
-        customColorWell.widthAnchor.constraint(equalToConstant: 36).isActive = true
-        customColorWell.heightAnchor.constraint(equalToConstant: 22).isActive = true
+        if customColorWell.constraints.isEmpty {
+            customColorWell.widthAnchor.constraint(equalToConstant: 36).isActive = true
+            customColorWell.heightAnchor.constraint(equalToConstant: 22).isActive = true
+        }
 
         var swatchViews: [NSView] = swatchButtons
         swatchViews.append(customColorWell)
@@ -480,11 +513,14 @@ final class PreferencesWindowController: NSWindowController {
         swatchRow.alignment = .centerY
         swatchRow.spacing = 6
 
-        let highlightCard = makeSectionCard(title: "Selection & Footer", rows: [
-            makeLabeledRow(label: "Highlight", control: swatchRow),
+        let highlightCard = makeSectionCard(title: L10n.t("Selection & Footer", "选中高亮与底栏"), rows: [
+            makeLabeledRow(label: L10n.t("Highlight", "高亮颜色"), control: swatchRow),
             makeSwitchRow(
-                title: "Show shortcut hints in footer",
-                subtitle: "Displays an unobtrusive bottom legend bar in thumbnail modes.",
+                title: L10n.t("Show shortcut hints in footer", "底部显示快捷键提示"),
+                subtitle: L10n.t(
+                    "Displays an unobtrusive bottom legend bar in thumbnail modes.",
+                    "在缩略图模式下于底部显示简洁的操作按键提示栏。"
+                ),
                 toggle: showFooterHintsSwitch,
                 action: #selector(toggleShowFooterHints)
             ),
@@ -494,58 +530,82 @@ final class PreferencesWindowController: NSWindowController {
     }
 
     private func buildFeaturesTab() -> NSView {
-        let previewCard = makeSectionCard(title: "Preview & Hover Controls", rows: [
+        let previewCard = makeSectionCard(title: L10n.t("Preview & Hover Controls", "预览与悬停交互"), rows: [
             makeSwitchRow(
-                title: "Hold-to-Preview when pausing on an icon",
-                subtitle: "In Icons Only mode, rest briefly on an icon while holding Command/Option to peek the window.",
+                title: L10n.t("Hold-to-Preview when pausing on an icon", "停留在图标上时自动预览"),
+                subtitle: L10n.t(
+                    "In Icons Only mode, rest briefly on an icon while holding Command/Option to peek the window.",
+                    "在“仅图标”模式下，按住切换键并在图标上稍作停留即可预览窗口内容。"
+                ),
                 toggle: autoPreviewOnHoldSwitch,
                 action: #selector(toggleAutoPreviewOnHold)
             ),
             makeSwitchRow(
-                title: "Spacebar persistent Quick Look (Space)",
-                subtitle: "Press Space to lock a floating window preview open as you switch.",
+                title: L10n.t("Spacebar persistent Quick Look (Space)", "空格键常驻快速预览 (Space)"),
+                subtitle: L10n.t(
+                    "Press Space to lock a floating window preview open as you switch.",
+                    "按空格键在切换期间常驻放大查看所选窗口。"
+                ),
                 toggle: spaceQuickLookSwitch,
                 action: #selector(toggleSpaceQuickLook)
             ),
             makeSwitchRow(
-                title: "Hover Quick-Action Pills",
-                subtitle: "Show left/right snap and close buttons when moving the pointer over thumbnails.",
+                title: L10n.t("Hover Quick-Action Pills", "悬停快捷操作按钮"),
+                subtitle: L10n.t(
+                    "Show left/right snap and close buttons when moving the pointer over thumbnails.",
+                    "鼠标移动到缩略图上时显示左/右分屏贴靠与关闭窗口按钮。"
+                ),
                 toggle: hoverActionPillsSwitch,
                 action: #selector(toggleHoverActionPills)
             ),
         ])
 
-        let workspaceCard = makeSectionCard(title: "Window Tiling & Navigation", rows: [
+        let workspaceCard = makeSectionCard(title: L10n.t("Window Tiling & Navigation", "窗口分屏与跨屏"), rows: [
             makeSwitchRow(
-                title: "Arrow-Key Window Snapping (← / → / ↑ / ↓ & C)",
-                subtitle: "Snap the selected window to screen halves or maximize. Turn off to rotate icons with arrow keys.",
+                title: L10n.t("Arrow-Key Window Snapping (← / → / ↑ / ↓ & C)", "方向键窗口贴靠 (← / → / ↑ / ↓ 与 C)"),
+                subtitle: L10n.t(
+                    "Snap the selected window to screen halves or maximize. Turn off to rotate icons with arrow keys.",
+                    "将选中窗口贴靠至半屏、三分之一或最大化；关闭则仅用方向键移动选中。"
+                ),
                 toggle: arrowKeySnappingSwitch,
                 action: #selector(toggleArrowKeySnapping)
             ),
             makeSwitchRow(
-                title: "Move Window Across Displays (D)",
-                subtitle: "Send the selected window directly to your next connected monitor.",
+                title: L10n.t("Move Window Across Displays (D)", "跨显示器移动窗口 (D)"),
+                subtitle: L10n.t(
+                    "Send the selected window directly to your next connected monitor.",
+                    "按 D 直接将当前选中的窗口发送到下一台外接显示器。"
+                ),
                 toggle: displayMoveShortcutSwitch,
                 action: #selector(toggleDisplayMoveShortcut)
             ),
             makeSwitchRow(
-                title: "Float Window on Top / PiP (P)",
-                subtitle: "Pin any window into a live ScreenCaptureKit Picture-in-Picture overlay with Ghost Mode.",
+                title: L10n.t("Float Window on Top / PiP (P)", "窗口置顶 / 实时画中画 (P)"),
+                subtitle: L10n.t(
+                    "Pin any window into a live ScreenCaptureKit Picture-in-Picture overlay with Ghost Mode.",
+                    "将任意窗口置顶为支持鼠标穿透的 ScreenCaptureKit 实时画中画悬浮窗。"
+                ),
                 toggle: pinShortcutSwitch,
                 action: #selector(togglePinShortcut)
             ),
         ])
 
-        let browserCard = makeSectionCard(title: "Browser & App Sources", rows: [
+        let browserCard = makeSectionCard(title: L10n.t("Browser & App Sources", "浏览器与窗口来源"), rows: [
             makeSwitchRow(
-                title: "Browser Tab Filter Shortcut (S)",
-                subtitle: "Press S in the switcher to jump to open tabs from Chrome, Safari, Arc, Edge, and Brave.",
+                title: L10n.t("Browser Tab Filter Shortcut (S)", "浏览器标签页过滤快捷键 (S)"),
+                subtitle: L10n.t(
+                    "Press S in the switcher to jump to open tabs from Chrome, Safari, Arc, Edge, and Brave.",
+                    "打开切换器时按 S 即可一键切换至 Chrome、Safari、Arc、Edge 与 Brave 标签页。"
+                ),
                 toggle: browserTabsShortcutSwitch,
                 action: #selector(toggleBrowserTabsShortcut)
             ),
             makeSwitchRow(
-                title: "Show Browser Tabs in Main List by Default",
-                subtitle: "Always mix open browser tabs into the main switcher strip instead of only showing them on S.",
+                title: L10n.t("Show Browser Tabs in Main List by Default", "默认在主列表中混排浏览器标签页"),
+                subtitle: L10n.t(
+                    "Always mix open browser tabs into the main switcher strip instead of only showing them on S.",
+                    "开启后默认将标签页混入主窗口列表，而非仅在按下 S 后显示。"
+                ),
                 toggle: includeBrowserTabsSwitch,
                 action: #selector(toggleIncludeBrowserTabs)
             ),
@@ -555,8 +615,11 @@ final class PreferencesWindowController: NSWindowController {
     }
 
     private func buildShortcutsTab() -> NSView {
-        let intro = NSTextField(wrappingLabelWithString:
-            "Hold a shortcut, tap its key to cycle windows, then release to switch.")
+        rows.removeAll()
+        let intro = NSTextField(wrappingLabelWithString: L10n.t(
+            "Hold a shortcut, tap its key to cycle windows, then release to switch.",
+            "按住快捷键并通过按键循环选择窗口，松开后即切换至目标窗口。"
+        ))
         intro.font = .systemFont(ofSize: 12)
         intro.textColor = .secondaryLabelColor
         intro.maximumNumberOfLines = 2
@@ -608,55 +671,87 @@ final class PreferencesWindowController: NSWindowController {
     }
 
     private func buildGeneralTab() -> NSView {
-        let behaviorCard = makeSectionCard(title: "Behavior & System Integration", rows: [
+        languageControl.segmentCount = AppLanguage.allCases.count
+        for (idx, lang) in AppLanguage.allCases.enumerated() {
+            languageControl.setLabel(lang.title, forSegment: idx)
+        }
+        languageControl.target = self
+        languageControl.action = #selector(languageChanged)
+
+        let behaviorCard = makeSectionCard(title: L10n.t("Behavior & System Integration", "行为与系统集成"), rows: [
+            makeLabeledRow(label: L10n.t("Language", "界面语言"), control: languageControl),
             makeSwitchRow(
-                title: "Override ⌘Tab",
-                subtitle: "Replace the built-in macOS application switcher with AltDeck.",
+                title: L10n.t("Override ⌘Tab", "接管系统 ⌘Tab"),
+                subtitle: L10n.t(
+                    "Replace the built-in macOS application switcher with AltDeck.",
+                    "用 AltDeck 替换 macOS 默认的应用切换器。"
+                ),
                 toggle: overrideCommandTabSwitch,
                 action: #selector(toggleOverrideCommandTab)
             ),
             makeSwitchRow(
-                title: "Follow Active Display",
-                subtitle: "Bring the switched window onto the monitor under your cursor if needed.",
+                title: L10n.t("Follow Active Display", "跟随当前显示器"),
+                subtitle: L10n.t(
+                    "Bring the switched window onto the monitor under your cursor if needed.",
+                    "必要时将切换的目标窗口移动到鼠标所在的显示器。"
+                ),
                 toggle: followActiveDisplaySwitch,
                 action: #selector(toggleFollowActiveDisplay)
             ),
             makeSwitchRow(
-                title: "Show Windows from All Spaces",
-                subtitle: "Include windows from other desktops and full-screen Spaces.",
+                title: L10n.t("Show Windows from All Spaces", "显示所有调度空间中的窗口"),
+                subtitle: L10n.t(
+                    "Include windows from other desktops and full-screen Spaces.",
+                    "包含其他桌面空间以及全屏应用窗口。"
+                ),
                 toggle: showAllSpacesSwitch,
                 action: #selector(toggleShowAllSpaces)
             ),
             makeSwitchRow(
-                title: "Include Minimized Windows",
-                subtitle: "Keep Dock-minimized windows selectable and auto-restore on switch.",
+                title: L10n.t("Include Minimized Windows", "包含已最小化的窗口"),
+                subtitle: L10n.t(
+                    "Keep Dock-minimized windows selectable and auto-restore on switch.",
+                    "保持最小化到程序坞的窗口可选，切换时自动还原显示。"
+                ),
                 toggle: showMinimizedSwitch,
                 action: #selector(toggleShowMinimized)
             ),
             makeSwitchRow(
-                title: "Launch AltDeck at Login",
-                subtitle: "Start automatically in the background whenever you log in.",
+                title: L10n.t("Launch AltDeck at Login", "开机自动启动 AltDeck"),
+                subtitle: L10n.t(
+                    "Start automatically in the background whenever you log in.",
+                    "每次登录系统时在后台自动启动。"
+                ),
                 toggle: launchAtLoginSwitch,
                 action: #selector(toggleLaunchAtLogin)
             ),
         ])
 
-        let permCard = makeSectionCard(title: "macOS Permissions", rows: [
+        let permCard = makeSectionCard(title: L10n.t("macOS Permissions", "macOS 系统权限"), rows: [
             makePermissionRow(
-                title: "Accessibility",
-                subtitle: "Required for global hotkeys and raising specific app windows.",
+                title: L10n.t("Accessibility", "辅助功能"),
+                subtitle: L10n.t(
+                    "Required for global hotkeys and raising specific app windows.",
+                    "用于监听全局快捷键并唤醒、置前特定窗口。"
+                ),
                 statusLabel: accessibilityStatusLabel,
                 action: #selector(openAccessibilityPane)
             ),
             makePermissionRow(
-                title: "Screen Recording",
-                subtitle: "Required for live window previews and reading offscreen window titles.",
+                title: L10n.t("Screen Recording", "屏幕录制"),
+                subtitle: L10n.t(
+                    "Required for live window previews and reading offscreen window titles.",
+                    "用于捕获实时窗口缩略图预览并读取窗口标题。"
+                ),
                 statusLabel: screenRecordingStatusLabel,
                 action: #selector(openScreenRecordingPane)
             ),
             makePermissionRow(
-                title: "Automation (Browsers)",
-                subtitle: "Required for listing and switching Chrome, Safari, Edge, Brave, and Arc tabs.",
+                title: L10n.t("Automation (Browsers)", "自动化控制（浏览器）"),
+                subtitle: L10n.t(
+                    "Required for listing and switching Chrome, Safari, Edge, Brave, and Arc tabs.",
+                    "用于读取并一键跳转 Chrome、Safari、Edge、Brave、Arc 打开的标签页。"
+                ),
                 statusLabel: automationStatusLabel,
                 action: #selector(openAutomationPane)
             ),
@@ -795,7 +890,7 @@ final class PreferencesWindowController: NSWindowController {
         statusLabel.font = .systemFont(ofSize: 11.5, weight: .medium)
         statusLabel.setContentHuggingPriority(.required, for: .horizontal)
 
-        let openBtn = NSButton(title: "System Settings…", target: self, action: action)
+        let openBtn = NSButton(title: L10n.t("System Settings…", "打开系统设置…"), target: self, action: action)
         openBtn.bezelStyle = .rounded
         openBtn.controlSize = .small
         openBtn.setContentHuggingPriority(.required, for: .horizontal)
@@ -830,6 +925,9 @@ final class PreferencesWindowController: NSWindowController {
         showMinimizedSwitch.state = UserDefaults.standard.bool(forKey: "TabStation.showMinimized") ? .on : .off
         includeBrowserTabsSwitch.state = FeaturePreferences.includeBrowserTabsByDefault ? .on : .off
         launchAtLoginSwitch.state = LaunchAtLogin.isEnabled ? .on : .off
+        if let langIdx = AppLanguage.allCases.firstIndex(of: AppLanguage.current) {
+            languageControl.selectedSegment = langIdx
+        }
 
         arrowKeySnappingSwitch.state = FeaturePreferences.arrowKeySnappingEnabled ? .on : .off
         autoPreviewOnHoldSwitch.state = AppearancePreferences.autoPreviewOnHold ? .on : .off
@@ -872,25 +970,25 @@ final class PreferencesWindowController: NSWindowController {
         customColorWell.color = AppearancePreferences.customAccentColor
 
         let axOK = Permissions.accessibilityGranted
-        accessibilityStatusLabel.stringValue = axOK ? "● Granted" : "● Needed"
+        accessibilityStatusLabel.stringValue = axOK ? L10n.t("● Granted", "● 已授权") : L10n.t("● Needed", "● 需授权")
         accessibilityStatusLabel.textColor = axOK ? .systemGreen : .systemOrange
 
         let srOK = Permissions.screenRecordingGranted
-        screenRecordingStatusLabel.stringValue = srOK ? "● Granted" : "● Optional"
+        screenRecordingStatusLabel.stringValue = srOK ? L10n.t("● Granted", "● 已授权") : L10n.t("● Optional", "● 可选")
         screenRecordingStatusLabel.textColor = srOK ? .systemGreen : .secondaryLabelColor
 
         switch Permissions.automationStatus(forBundleIDs: BrowserTabService.shared.supportedBundleIDs) {
         case .granted:
-            automationStatusLabel.stringValue = "● Granted"
+            automationStatusLabel.stringValue = L10n.t("● Granted", "● 已授权")
             automationStatusLabel.textColor = .systemGreen
         case .promptable:
-            automationStatusLabel.stringValue = "● Pending"
+            automationStatusLabel.stringValue = L10n.t("● Pending", "● 待授权")
             automationStatusLabel.textColor = .systemOrange
         case .denied:
-            automationStatusLabel.stringValue = "● Denied"
+            automationStatusLabel.stringValue = L10n.t("● Denied", "● 已拒绝")
             automationStatusLabel.textColor = .systemRed
         case .unavailable:
-            automationStatusLabel.stringValue = "● Idle"
+            automationStatusLabel.stringValue = L10n.t("● Idle", "● 未启动")
             automationStatusLabel.textColor = .secondaryLabelColor
         }
 
@@ -901,13 +999,24 @@ final class PreferencesWindowController: NSWindowController {
         let all = ShortcutStore.loadAll()
         let p = all[.primary] ?? .optionTab
         let s = all[.sameApp] ?? Shortcut(modifiers: [.option], keyCode: KeyCode.grave)
-        legendLabel.stringValue = "\(p.displayString) next · \(s.displayString) same app · esc cancel"
+        legendLabel.stringValue = L10n.t(
+            "\(p.displayString) next · \(s.displayString) same app · esc cancel",
+            "\(p.displayString) 下一个 · \(s.displayString) 同应用 · esc 取消"
+        )
     }
 
     // MARK: - Actions
 
     @objc private func tabChanged(_ sender: NSSegmentedControl) {
         tabView.selectTabViewItem(at: sender.selectedSegment)
+    }
+
+    @objc private func languageChanged(_ sender: NSSegmentedControl) {
+        let all = AppLanguage.allCases
+        guard sender.selectedSegment >= 0, sender.selectedSegment < all.count else { return }
+        AppLanguage.current = all[sender.selectedSegment]
+        rebuildLocalizedUI()
+        onAppearanceChange?()
     }
 
     @objc private func displayStyleChanged(_ sender: NSSegmentedControl) {

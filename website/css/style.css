@@ -275,6 +275,37 @@ button {
   border-color: var(--border-specular);
 }
 
+.btn-nav-lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 11px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-apple);
+}
+
+.btn-nav-lang:hover {
+  background: var(--bg-glass-hover);
+  border-color: var(--border-specular);
+  color: var(--text-secondary);
+}
+
+.btn-nav-lang .lang-option.is-active {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.btn-nav-lang .lang-sep {
+  opacity: 0.45;
+}
+
 /* ==========================================================================
    Hero Section
    ========================================================================== */

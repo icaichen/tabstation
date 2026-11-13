@@ -53,6 +53,6 @@ struct WindowInfo: Hashable {
         } else {
             base = ownerName
         }
-        return isMinimized ? "\(base) (Minimized)" : base
+        return isMinimized ? L10n.t("\(base) (Minimized)", "\(base)（已最小化）") : base
     }
 }

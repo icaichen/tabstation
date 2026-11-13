@@ -17,7 +17,7 @@ final class ShortcutRecorderView: NSView {
     private(set) var shortcut: Shortcut = .optionTab
     private var isRecording = false
     private let label = NSTextField(labelWithString: "")
-    private let placeholder = "Record…"
+    private var placeholder: String { L10n.t("Record…", "请按键…") }
 
     override var acceptsFirstResponder: Bool { true }
     override var intrinsicContentSize: NSSize { NSSize(width: 150, height: 28) }
