@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Launch
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        migrateLegacyDefaultsIfNeeded()
         Theme.configure()
         didAskForPermissions = UserDefaults.standard.bool(forKey: "TabStation.didAskForPermissions")
 
@@ -18,6 +19,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         installHotKeys()
         setupPreferencesHandlers()
         handlePermissions()
+    }
+
+    /// Older builds defaulted `includeBrowserTabs` to enabled; reset it once so the
+    /// default switcher shows only apps/windows until the user presses `S` (or opts in).
+    private func migrateLegacyDefaultsIfNeeded() {
+        let key = "TabStation.defaultsSchemaVersion"
+        let current = UserDefaults.standard.integer(forKey: key)
+        if current < 2 {
+            UserDefaults.standard.removeObject(forKey: "TabStation.includeBrowserTabs")
+            UserDefaults.standard.set(2, forKey: key)
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
