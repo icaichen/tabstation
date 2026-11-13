@@ -49,9 +49,10 @@ function initSandboxSwitcher() {
   let isOptionHeld = false;
   let quickLookVisible = false;
   let pipVisible = false;
+  let browserTabsMode = false;
 
   // Window Data for the Sandbox
-  const windows = [
+  const appWindows = [
     {
       id: 0,
       title: "PreferencesWindowController.swift — TabStation",
@@ -85,6 +86,53 @@ function initSandboxSwitcher() {
       codePreview: `// Native Glass Design Tokens\nconst Tokens = {\n  Surface: 'NSGlassEffectView (.regular / .clear)',\n  HUD_CornerRadius: 22,\n  DismissLatency: '< 1ms Synchronous'\n};`
     }
   ];
+
+  const browserTabs = [
+    {
+      id: 0,
+      title: "icaichen/tabstation — GitHub",
+      app: "Google Chrome • github.com",
+      icon: "https://cdn.simpleicons.org/googlechrome/4285f4",
+      badge: "Window 1 · Tab 1",
+      codePreview: `// TabStation BrowserTabService (Batch AppleEvents)\n// Instant switching to Chrome Window 1, Tab 1\nhttps://github.com/icaichen/tabstation`
+    },
+    {
+      id: 1,
+      title: "ScreenCaptureKit SCStream Docs",
+      app: "Safari • developer.apple.com",
+      icon: "https://cdn.simpleicons.org/safari/006cff",
+      badge: "Window 1 · Tab 3",
+      codePreview: `// Apple Developer Documentation\nclass SCStream: NSObject\n// Powers live Option-B Picture-in-Picture & thumbnails`
+    },
+    {
+      id: 2,
+      title: "Linear — TabStation v1.0",
+      app: "Arc • linear.app",
+      icon: "https://cdn.simpleicons.org/arc/fcbf49",
+      badge: "Window 1 · Tab 2",
+      codePreview: `// Issue #14: Instant S-Key Browser Tab Filter\n// Status: Shipped with background pre-warming`
+    },
+    {
+      id: 3,
+      title: "Figma — macOS Switcher Tokens",
+      app: "Google Chrome • figma.com",
+      icon: "https://cdn.simpleicons.org/figma/f24e1e",
+      badge: "Window 2 · Tab 1",
+      codePreview: `// Figma Design Tokens\nhttps://www.figma.com/file/tabstation-hud-v1`
+    }
+  ];
+
+  const defaultCardSnapshots = Array.from(cards).map((card) => ({
+    title: card.querySelector(".card-title")?.textContent || "",
+    app: card.querySelector(".card-app-name")?.textContent || "",
+    iconSrc: card.querySelector(".card-app-icon-badge")?.getAttribute("src") || ""
+  }));
+
+  function activeItems() {
+    return browserTabsMode ? browserTabs : appWindows;
+  }
+
+  let windows = appWindows;
 
   function updateSelection(newIndex, showToast = true) {
     if (cards.length === 0) return;
@@ -147,6 +195,13 @@ function initSandboxSwitcher() {
       return;
     }
 
+    // S -> Browser Tabs Filter
+    if ((e.key === "s" || e.key === "S") && !e.target.matches("input, textarea")) {
+      e.preventDefault();
+      toggleBrowserTabsMode();
+      return;
+    }
+
     // W -> Close Window
     if ((e.key === "w" || e.key === "W") && !e.target.matches("input, textarea")) {
       e.preventDefault();
@@ -192,6 +247,7 @@ function initSandboxSwitcher() {
   // Action buttons
   const btnNext = document.getElementById("demo-btn-next");
   const btnPrev = document.getElementById("demo-btn-prev");
+  const btnTabs = document.getElementById("demo-btn-tabs");
   const btnQuickLook = document.getElementById("demo-btn-quicklook");
   const btnPip = document.getElementById("demo-btn-pip");
   const btnSnapLeft = document.getElementById("demo-btn-snap-left");
@@ -199,7 +255,36 @@ function initSandboxSwitcher() {
 
   if (btnNext) btnNext.addEventListener("click", () => updateSelection(currentIndex + 1));
   if (btnPrev) btnPrev.addEventListener("click", () => updateSelection(currentIndex - 1));
+  if (btnTabs) btnTabs.addEventListener("click", () => toggleBrowserTabsMode());
   if (btnQuickLook) btnQuickLook.addEventListener("click", () => toggleQuickLook());
+
+  function toggleBrowserTabsMode() {
+    browserTabsMode = !browserTabsMode;
+    windows = activeItems();
+    if (btnTabs) btnTabs.classList.toggle("active", browserTabsMode);
+    cards.forEach((card, idx) => {
+      const titleEl = card.querySelector(".card-title");
+      const appEl = card.querySelector(".card-app-name");
+      const iconEl = card.querySelector(".card-app-icon-badge");
+      if (browserTabsMode) {
+        const item = browserTabs[idx];
+        if (titleEl) titleEl.textContent = item.title;
+        if (appEl) appEl.textContent = item.app;
+        if (iconEl) iconEl.setAttribute("src", item.icon);
+      } else {
+        const snap = defaultCardSnapshots[idx];
+        if (titleEl) titleEl.textContent = snap.title;
+        if (appEl) appEl.textContent = snap.app;
+        if (iconEl && snap.iconSrc) iconEl.setAttribute("src", snap.iconSrc);
+      }
+    });
+    updateSelection(0, false);
+    if (feedbackStatus) {
+      feedbackStatus.textContent = browserTabsMode
+        ? "Browser Tabs (4) — Press S to return to app windows"
+        : "Showing all app windows (Default) — Press S for Browser Tabs";
+    }
+  }
   if (btnPip) btnPip.addEventListener("click", () => togglePiP());
   if (btnSnapLeft) btnSnapLeft.addEventListener("click", () => triggerSnap("Left Half (50%)"));
   if (btnSnapRight) btnSnapRight.addEventListener("click", () => triggerSnap("Right Half (50%)"));

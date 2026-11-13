@@ -774,15 +774,27 @@ final class SwitcherController {
                     return
                 }
                 self.transientBrowserTabs = freshTabs
-                self.applyFilter()
-                let screen = self.screenUnderCursor()
-                self.configureView(on: screen)
-                self.layoutPanel(on: screen)
-                self.selectedIndex = min(self.selectedIndex, max(0, freshTabs.count - 1))
-                self.view.setSelection(self.selectedIndex, animated: false)
-                self.showTransientNotice("Browser Tabs (\(freshTabs.count)) — S to exit")
+                if !self.browserTabsEqual(cached, freshTabs) {
+                    self.applyFilter()
+                    let screen = self.screenUnderCursor()
+                    self.configureView(on: screen)
+                    self.layoutPanel(on: screen)
+                    self.selectedIndex = min(self.selectedIndex, max(0, freshTabs.count - 1))
+                    self.view.setSelection(self.selectedIndex, animated: false)
+                    self.showTransientNotice("Browser Tabs (\(freshTabs.count)) — S to exit")
+                }
             }
         }
+    }
+
+    private func browserTabsEqual(_ lhs: [WindowInfo], _ rhs: [WindowInfo]) -> Bool {
+        guard lhs.count == rhs.count else { return false }
+        for (a, b) in zip(lhs, rhs) {
+            if a.id != b.id || a.title != b.title || a.browserTab?.url != b.browserTab?.url {
+                return false
+            }
+        }
+        return true
     }
 
     private func showTransientNotice(_ text: String) {

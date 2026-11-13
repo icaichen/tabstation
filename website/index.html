@@ -225,8 +225,8 @@
           <div class="hero-floating-pill pill-right">
             <div class="pill-icon">P</div>
             <div>
-              <div style="color: #fff; font-size: 0.8rem; font-weight: 600;">Floating PiP &amp; Mouse Pass</div>
-              <div style="color: var(--text-secondary); font-size: 0.72rem;">Interactive Quartz click-forwarding</div>
+              <div style="color: #fff; font-size: 0.8rem; font-weight: 600;">Floating PiP &amp; Ghost Mode</div>
+              <div style="color: var(--text-secondary); font-size: 0.72rem;">Live SCStream mirror + click-through</div>
             </div>
           </div>
         </div>
@@ -264,7 +264,7 @@
               <span>✓ TabStation: Direct tab-level jumping</span>
             </div>
             <p class="bento-desc">
-              Every other switcher sees Google Chrome or Safari as a single window. If you have 40 tabs open, you switch to the browser and then waste ten seconds scanning tiny tab strips. TabStation queries Chrome, Safari, Edge, Arc, and Brave to surface open pages, Figma boards, and GitHub PRs—press <span class="key-badge">S</span> anytime, or show tabs in your main strip by default in Settings.
+              Every other switcher sees Google Chrome or Safari as a single opaque block. TabStation keeps your default strip uncluttered with apps &amp; windows only—then press <span class="key-badge">S</span> anytime for instant, pre-warmed switching across live Chrome, Safari, Edge, Arc, and Brave tabs (or mix tabs in by default in Settings).
             </p>
           </div>
 
@@ -341,10 +341,10 @@
         <!-- Card 3: Natural Hold-to-Preview & Quick Look (Span 4) -->
         <div class="bento-card bento-span-4">
           <div>
-            <div class="bento-tag">Minimalist by Default</div>
-            <h3 class="bento-title">Hold-to-Preview &amp; Quick Look</h3>
+            <div class="bento-tag">Thumbnails First</div>
+            <h3 class="bento-title">Thumbnails Only &amp; Hold-to-Preview</h3>
             <p class="bento-desc">
-              Stay fast in Apple-minimalist <strong>Icons Only</strong> mode with zero clutter. Pause briefly (~0.36s) on any selected icon while holding <span class="key-badge">⌘</span>/<span class="key-badge">⌥</span> and a crisp, native-aspect Retina preview floats above the bar—vanishing the instant you resume switching, or lock it with <span class="key-badge">Space</span>.
+              Ships in clean <strong>Thumbnails Only</strong> mode with subtle shortcut hints by default, or switch to minimalist <strong>Icons Only</strong>: pause ~0.36s on an icon while holding <span class="key-badge">⌘</span>/<span class="key-badge">⌥</span> for a Retina preview—or lock it anytime with <span class="key-badge">Space</span>.
             </p>
           </div>
 
@@ -392,9 +392,9 @@
         <div class="bento-card bento-span-4">
           <div>
             <div class="bento-tag">Multi-Monitor Perfection</div>
-            <h3 class="bento-title">Display Dispatcher (Key: D)</h3>
+            <h3 class="bento-title">Cursor Monitor &amp; Key: D Teleport</h3>
             <p class="bento-desc">
-              Have dual Studio Displays or a MacBook connected to an ultrawide? Press <span class="key-badge">D</span> while on any window to warp it to your next screen with proportional geometry recalculation.
+              TabStation opens automatically on whichever monitor your cursor is on. Need to move a window across dual Studio Displays or an ultrawide? Press <span class="key-badge">D</span> to teleport it to the next screen.
             </p>
           </div>
 
@@ -545,10 +545,12 @@
         <!-- Sandbox Footer / Hotkey Legend -->
         <div class="sandbox-hud-footer">
           <div class="legend-keys">
-            <div class="legend-item"><span class="key-badge">⌥Tab</span> <span>Next Window</span></div>
-            <div class="legend-item"><span class="key-badge">⌥`</span> <span>Same App</span></div>
-            <div class="legend-item"><span class="key-badge">Space</span> <span>Quick Look</span></div>
-            <div class="legend-item"><span class="key-badge">P</span> <span>PiP Pin</span></div>
+            <div class="legend-item"><span class="key-badge">⌥Tab</span> <span>Next</span></div>
+            <div class="legend-item"><span class="key-badge">Space</span> <span>Peek</span></div>
+            <div class="legend-item"><span class="key-badge">←/→</span> <span>Snap</span></div>
+            <div class="legend-item"><span class="key-badge">P</span> <span>PiP</span></div>
+            <div class="legend-item"><span class="key-badge">D</span> <span>Display</span></div>
+            <div class="legend-item"><span class="key-badge">S</span> <span>Tabs</span></div>
             <div class="legend-item"><span class="key-badge">W</span> <span>Close</span></div>
           </div>
           <div>Release modifier to activate</div>
@@ -593,6 +595,9 @@
         </button>
         <button id="demo-btn-next" class="interactive-demo-btn">
           <span>Next Window →</span>
+        </button>
+        <button id="demo-btn-tabs" class="interactive-demo-btn">
+          <span>Browser Tabs (S)</span>
         </button>
         <button id="demo-btn-quicklook" class="interactive-demo-btn">
           <span>Toggle Spacebar Quick Look</span>
@@ -1104,16 +1109,18 @@
 
         <div class="faq-item">
           <button class="faq-question-btn">
-            <span>Why does TabStation require Accessibility and Screen Recording permissions?</span>
+            <span>Why does TabStation ask for Accessibility, Screen Recording, and Automation?</span>
             <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
           <div class="faq-answer">
             <p>
-              macOS enforces strict sandboxing:
+              macOS enforces strict TCC privacy boundaries:
               <br><br>
-              1. <strong>Accessibility Permission</strong> is required to observe your hold modifier via <code>CGEventTap</code> and to raise specific windows through Apple's <code>AXUIElement</code> APIs rather than just activating the application in front.
+              1. <strong>Accessibility</strong> observes your hold modifier via <code>CGEventTap</code> and raises specific app windows through Apple’s <code>AXUIElement</code> APIs.
               <br><br>
-              2. <strong>Screen Recording Permission</strong> is required by macOS ScreenCaptureKit to generate live window thumbnails. Without Screen Recording, TabStation falls back to large app icons. TabStation never records your screen to disk and never transmits any data over the network.
+              2. <strong>Screen Recording</strong> powers live ScreenCaptureKit window thumbnails and on-demand Picture-in-Picture streams (never recorded to disk or sent over the network).
+              <br><br>
+              3. <strong>Automation (optional, for <span class="key-badge">S</span>)</strong> is prompted once when you press <code>S</code> to list open tabs in Chrome, Safari, Edge, Brave, or Arc. You can inspect or manage all three anytime inside <strong>Settings → General</strong>.
             </p>
           </div>
         </div>

@@ -31,6 +31,9 @@ final class BrowserTabService {
         SupportedBrowser(name: "Arc", bundleID: "company.thebrowser.Arc", kind: .arc)
     ]
 
+    private let scriptQueue = DispatchQueue(label: "com.tabstation.BrowserTabService.script", qos: .userInteractive)
+    private var compiledTabScripts: [String: NSAppleScript] = [:]
+
     var supportedBundleIDs: [String] {
         browsers.map(\.bundleID)
     }
@@ -78,53 +81,85 @@ final class BrowserTabService {
         return FetchResult(tabs: result, deniedBrowsers: deniedBrowsers)
     }
 
-    private func queryTabs(for browser: SupportedBrowser, pid: pid_t) -> (tabs: [WindowInfo], permissionDenied: Bool) {
+    private func compiledTabScript(for browser: SupportedBrowser) -> NSAppleScript? {
+        if let existing = compiledTabScripts[browser.bundleID] {
+            return existing
+        }
         let titleProperty = browser.kind == .safari ? "name" : "title"
         let scriptSource = """
         set fieldSep to ASCII character 31
         set rowSep to ASCII character 30
         tell application "\(browser.name)"
             set output to ""
-            set wIdx to 0
             try
-                set winList to windows
+                set winCount to count of windows
             on error
                 return ""
             end try
-            repeat with w in winList
-                set wIdx to wIdx + 1
-                set tIdx to 0
+            repeat with wIdx from 1 to winCount
+                set w to window wIdx
                 try
-                    set tabList to tabs of w
+                    set titles to \(titleProperty) of every tab of w
+                    set urls to URL of every tab of w
+                    set tCount to count of titles
+                    set uCount to count of urls
+                    if uCount < tCount then set tCount to uCount
+                    repeat with tIdx from 1 to tCount
+                        set tabTitle to ""
+                        set tabURL to ""
+                        try
+                            set rawTitle to item tIdx of titles
+                            if rawTitle is not missing value then set tabTitle to (rawTitle as string)
+                        end try
+                        try
+                            set rawURL to item tIdx of urls
+                            if rawURL is not missing value then set tabURL to (rawURL as string)
+                        end try
+                        set output to output & (wIdx as string) & fieldSep & (tIdx as string) & fieldSep & tabTitle & fieldSep & tabURL & rowSep
+                    end repeat
                 on error
-                    set tabList to {}
+                    set tIdx to 0
+                    try
+                        set tabList to tabs of w
+                    on error
+                        set tabList to {}
+                    end try
+                    repeat with t in tabList
+                        set tIdx to tIdx + 1
+                        set tabTitle to ""
+                        set tabURL to ""
+                        try
+                            set rawTitle to \(titleProperty) of t
+                            if rawTitle is not missing value then set tabTitle to (rawTitle as string)
+                        end try
+                        try
+                            set rawURL to URL of t
+                            if rawURL is not missing value then set tabURL to (rawURL as string)
+                        end try
+                        set output to output & (wIdx as string) & fieldSep & (tIdx as string) & fieldSep & tabTitle & fieldSep & tabURL & rowSep
+                    end repeat
                 end try
-                repeat with t in tabList
-                    set tIdx to tIdx + 1
-                    set tabTitle to ""
-                    set tabURL to ""
-                    try
-                        set rawTitle to \(titleProperty) of t
-                        if rawTitle is not missing value then set tabTitle to (rawTitle as string)
-                    end try
-                    try
-                        set rawURL to URL of t
-                        if rawURL is not missing value then set tabURL to (rawURL as string)
-                    end try
-                    set output to output & (wIdx as string) & fieldSep & (tIdx as string) & fieldSep & tabTitle & fieldSep & tabURL & rowSep
-                end repeat
             end repeat
             return output
         end tell
         """
+        guard let script = NSAppleScript(source: scriptSource) else { return nil }
+        var compileErr: NSDictionary?
+        script.compileAndReturnError(&compileErr)
+        compiledTabScripts[browser.bundleID] = script
+        return script
+    }
 
+    private func queryTabs(for browser: SupportedBrowser, pid: pid_t) -> (tabs: [WindowInfo], permissionDenied: Bool) {
         var error: NSDictionary?
-        guard let script = NSAppleScript(source: scriptSource) else { return ([], false) }
-        let descriptor = script.executeAndReturnError(&error)
+        let descriptor: NSAppleEventDescriptor? = scriptQueue.sync {
+            guard let script = compiledTabScript(for: browser) else { return nil }
+            return script.executeAndReturnError(&error)
+        }
         if let error, let code = error[NSAppleScript.errorNumber] as? Int, code == Int(errAEEventNotPermitted) {
             return ([], true)
         }
-        guard let output = descriptor.stringValue, !output.isEmpty else { return ([], false) }
+        guard let output = descriptor?.stringValue, !output.isEmpty else { return ([], false) }
 
         var items: [WindowInfo] = []
         let entries = output.components(separatedBy: "\u{1E}")
