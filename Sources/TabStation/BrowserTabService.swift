@@ -1,9 +1,15 @@
 import AppKit
+import ApplicationServices
 
 /// Discovers open tabs in running macOS web browsers and provides tab-level activation.
 final class BrowserTabService {
 
     static let shared = BrowserTabService()
+
+    struct FetchResult {
+        let tabs: [WindowInfo]
+        let deniedBrowsers: [String]
+    }
 
     private struct SupportedBrowser {
         let name: String
@@ -25,9 +31,20 @@ final class BrowserTabService {
         SupportedBrowser(name: "Arc", bundleID: "company.thebrowser.Arc", kind: .arc)
     ]
 
-    /// Fetches all open tabs across all running supported browsers.
+    var supportedBundleIDs: [String] {
+        browsers.map(\.bundleID)
+    }
+
+    /// Fetches all open tabs across all running supported browsers silently (no permission prompt).
     func fetchTabs() -> [WindowInfo] {
+        fetchTabsResult(promptIfNeeded: false).tabs
+    }
+
+    /// Fetches open tabs across running supported browsers, optionally prompting for Automation
+    /// permission when invoked explicitly by the user (must be called off the main thread).
+    func fetchTabsResult(promptIfNeeded: Bool) -> FetchResult {
         var result: [WindowInfo] = []
+        var deniedBrowsers: [String] = []
         let runningApps = NSWorkspace.shared.runningApplications
 
         for browser in browsers {
@@ -37,60 +54,83 @@ final class BrowserTabService {
                 continue
             }
 
-            let tabs = queryTabs(for: browser, pid: app.processIdentifier)
-            result.append(contentsOf: tabs)
+            let targetBundleID = app.bundleIdentifier ?? browser.bundleID
+            let permStatus = Permissions.automationPermission(
+                forBundleID: targetBundleID,
+                askUserIfNeeded: promptIfNeeded
+            )
+            if permStatus == OSStatus(errAEEventNotPermitted) {
+                deniedBrowsers.append(browser.name)
+                continue
+            }
+            if !promptIfNeeded && permStatus == OSStatus(errAEEventWouldRequireUserConsent) {
+                continue
+            }
+
+            let (tabs, deniedByScript) = queryTabs(for: browser, pid: app.processIdentifier)
+            if deniedByScript {
+                deniedBrowsers.append(browser.name)
+            } else {
+                result.append(contentsOf: tabs)
+            }
         }
 
-        return result
+        return FetchResult(tabs: result, deniedBrowsers: deniedBrowsers)
     }
 
-    private func queryTabs(for browser: SupportedBrowser, pid: pid_t) -> [WindowInfo] {
-        let scriptSource: String
-        switch browser.kind {
-        case .chromium, .arc:
-            scriptSource = """
-            tell application "\(browser.name)"
-                set output to ""
-                set wIdx to 0
-                repeat with w in windows
-                    set wIdx to wIdx + 1
-                    set tIdx to 0
-                    repeat with t in tabs of w
-                        set tIdx to tIdx + 1
-                        set output to output & (wIdx as string) & ":::" & (tIdx as string) & ":::" & (title of t) & ":::" & (URL of t) & "---"
-                    end repeat
+    private func queryTabs(for browser: SupportedBrowser, pid: pid_t) -> (tabs: [WindowInfo], permissionDenied: Bool) {
+        let titleProperty = browser.kind == .safari ? "name" : "title"
+        let scriptSource = """
+        set fieldSep to ASCII character 31
+        set rowSep to ASCII character 30
+        tell application "\(browser.name)"
+            set output to ""
+            set wIdx to 0
+            try
+                set winList to windows
+            on error
+                return ""
+            end try
+            repeat with w in winList
+                set wIdx to wIdx + 1
+                set tIdx to 0
+                try
+                    set tabList to tabs of w
+                on error
+                    set tabList to {}
+                end try
+                repeat with t in tabList
+                    set tIdx to tIdx + 1
+                    set tabTitle to ""
+                    set tabURL to ""
+                    try
+                        set rawTitle to \(titleProperty) of t
+                        if rawTitle is not missing value then set tabTitle to (rawTitle as string)
+                    end try
+                    try
+                        set rawURL to URL of t
+                        if rawURL is not missing value then set tabURL to (rawURL as string)
+                    end try
+                    set output to output & (wIdx as string) & fieldSep & (tIdx as string) & fieldSep & tabTitle & fieldSep & tabURL & rowSep
                 end repeat
-                return output
-            end tell
-            """
-        case .safari:
-            scriptSource = """
-            tell application "Safari"
-                set output to ""
-                set wIdx to 0
-                repeat with w in windows
-                    set wIdx to wIdx + 1
-                    set tIdx to 0
-                    repeat with t in tabs of w
-                        set tIdx to tIdx + 1
-                        set output to output & (wIdx as string) & ":::" & (tIdx as string) & ":::" & (name of t) & ":::" & (URL of t) & "---"
-                    end repeat
-                end repeat
-                return output
-            end tell
-            """
-        }
+            end repeat
+            return output
+        end tell
+        """
 
         var error: NSDictionary?
-        guard let script = NSAppleScript(source: scriptSource) else { return [] }
+        guard let script = NSAppleScript(source: scriptSource) else { return ([], false) }
         let descriptor = script.executeAndReturnError(&error)
-        guard let output = descriptor.stringValue, !output.isEmpty else { return [] }
+        if let error, let code = error[NSAppleScript.errorNumber] as? Int, code == Int(errAEEventNotPermitted) {
+            return ([], true)
+        }
+        guard let output = descriptor.stringValue, !output.isEmpty else { return ([], false) }
 
         var items: [WindowInfo] = []
-        let entries = output.components(separatedBy: "---")
+        let entries = output.components(separatedBy: "\u{1E}")
 
         for entry in entries where !entry.isEmpty {
-            let parts = entry.components(separatedBy: ":::")
+            let parts = entry.components(separatedBy: "\u{1F}")
             guard parts.count >= 4,
                   let wIdx = Int(parts[0]),
                   let tIdx = Int(parts[1]) else { continue }
@@ -126,7 +166,7 @@ final class BrowserTabService {
             items.append(info)
         }
 
-        return items
+        return (items, false)
     }
 
     /// Activates a specific browser tab via AppleScript.

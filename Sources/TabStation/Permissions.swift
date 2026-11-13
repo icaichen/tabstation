@@ -31,12 +31,54 @@ enum Permissions {
         _ = CGRequestScreenCaptureAccess()
     }
 
+    enum AutomationStatus: Equatable {
+        case granted
+        case promptable
+        case denied
+        case unavailable
+    }
+
+    /// Queries (and optionally prompts) macOS Automation TCC permission for a target app bundle ID.
+    /// Must only pass `askUserIfNeeded: true` from a background queue during an explicit user action.
+    static func automationPermission(forBundleID bundleID: String, askUserIfNeeded: Bool = false) -> OSStatus {
+        let target = NSAppleEventDescriptor(bundleIdentifier: bundleID)
+        guard let aeDesc = target.aeDesc else { return OSStatus(procNotFound) }
+        return AEDeterminePermissionToAutomateTarget(aeDesc, typeWildCard, typeWildCard, askUserIfNeeded)
+    }
+
+    /// Summarizes Automation permission across whichever target apps are currently running.
+    static func automationStatus(forBundleIDs bundleIDs: [String]) -> AutomationStatus {
+        let runningIDs = Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier))
+        let activeTargets = bundleIDs.filter { runningIDs.contains($0) }
+        guard !activeTargets.isEmpty else { return .unavailable }
+
+        var sawPromptable = false
+        var sawGranted = false
+        for bundleID in activeTargets {
+            let status = automationPermission(forBundleID: bundleID, askUserIfNeeded: false)
+            if status == noErr {
+                sawGranted = true
+            } else if status == OSStatus(errAEEventNotPermitted) {
+                return .denied
+            } else if status == OSStatus(errAEEventWouldRequireUserConsent) {
+                sawPromptable = true
+            }
+        }
+        if sawPromptable { return .promptable }
+        if sawGranted { return .granted }
+        return .unavailable
+    }
+
     static func openAccessibilitySettings() {
         open("Privacy_Accessibility")
     }
 
     static func openScreenRecordingSettings() {
         open("Privacy_ScreenCapture")
+    }
+
+    static func openAutomationSettings() {
+        open("Privacy_Automation")
     }
 
     private static func open(_ pane: String) {

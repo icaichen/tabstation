@@ -459,7 +459,8 @@ final class HotKeyInterceptor {
         case .keyUp:
             let keycode = UInt16(truncatingIfNeeded: event.getIntegerValueField(.keyboardEventKeycode))
             if isSwitcherVisible || activeRole != .none {
-                if [KeyCode.tab, KeyCode.grave].contains(keycode) {
+                if [KeyCode.tab, KeyCode.grave].contains(keycode)
+                    || (keycode == KeyCode.s && FeaturePreferences.browserTabsShortcutEnabled) {
                     return true
                 }
                 if [54, 55, 56, 57, 58, 59, 60, 61].contains(keycode) {

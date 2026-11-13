@@ -71,6 +71,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>NSPrincipalClass</key><string>NSApplication</string>
     <key>NSSupportsAutomaticTermination</key><false/>
     <key>NSSupportsSuddenTermination</key><false/>
+    <key>NSAppleEventsUsageDescription</key><string>TabStation uses Apple Events to list and switch open browser tabs in Chrome, Safari, Arc, Edge, and Brave.</string>
 </dict>
 </plist>
 PLIST

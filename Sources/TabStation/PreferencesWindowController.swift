@@ -263,6 +263,7 @@ final class PreferencesWindowController: NSWindowController {
     private let launchAtLoginSwitch = NSSwitch()
     private let accessibilityStatusLabel = NSTextField(labelWithString: "")
     private let screenRecordingStatusLabel = NSTextField(labelWithString: "")
+    private let automationStatusLabel = NSTextField(labelWithString: "")
 
     private let resetButton = NSButton(title: "Restore Defaults", target: nil, action: nil)
     private let doneButton = NSButton(title: "Done", target: nil, action: nil)
@@ -653,6 +654,12 @@ final class PreferencesWindowController: NSWindowController {
                 statusLabel: screenRecordingStatusLabel,
                 action: #selector(openScreenRecordingPane)
             ),
+            makePermissionRow(
+                title: "Automation (Browsers)",
+                subtitle: "Required for listing and switching Chrome, Safari, Edge, Brave, and Arc tabs.",
+                statusLabel: automationStatusLabel,
+                action: #selector(openAutomationPane)
+            ),
         ])
 
         return makeCardStack([behaviorCard, permCard])
@@ -872,6 +879,21 @@ final class PreferencesWindowController: NSWindowController {
         screenRecordingStatusLabel.stringValue = srOK ? "● Granted" : "● Optional"
         screenRecordingStatusLabel.textColor = srOK ? .systemGreen : .secondaryLabelColor
 
+        switch Permissions.automationStatus(forBundleIDs: BrowserTabService.shared.supportedBundleIDs) {
+        case .granted:
+            automationStatusLabel.stringValue = "● Granted"
+            automationStatusLabel.textColor = .systemGreen
+        case .promptable:
+            automationStatusLabel.stringValue = "● Pending"
+            automationStatusLabel.textColor = .systemOrange
+        case .denied:
+            automationStatusLabel.stringValue = "● Denied"
+            automationStatusLabel.textColor = .systemRed
+        case .unavailable:
+            automationStatusLabel.stringValue = "● Idle"
+            automationStatusLabel.textColor = .secondaryLabelColor
+        }
+
         refreshLegend()
     }
 
@@ -1028,6 +1050,10 @@ final class PreferencesWindowController: NSWindowController {
 
     @objc private func openScreenRecordingPane() {
         Permissions.openScreenRecordingSettings()
+    }
+
+    @objc private func openAutomationPane() {
+        Permissions.openAutomationSettings()
     }
 
     @objc private func restoreDefaults() {

@@ -751,7 +751,8 @@ final class SwitcherController {
 
         let currentGen = generation
         DispatchQueue.global(qos: .userInteractive).async { [weak self] in
-            let freshTabs = BrowserTabService.shared.fetchTabs()
+            let fetchResult = BrowserTabService.shared.fetchTabsResult(promptIfNeeded: true)
+            let freshTabs = fetchResult.tabs
             WindowListCache.shared.updateCachedBrowserTabs(freshTabs)
             DispatchQueue.main.async { [weak self] in
                 guard let self, self.isVisible, self.browserFilterEnabled, self.generation == currentGen else { return }
@@ -764,7 +765,12 @@ final class SwitcherController {
                     self.layoutPanel(on: screen)
                     self.selectedIndex = min(self.selectedIndex, max(0, self.visibleWindows.count - 1))
                     self.view.setSelection(self.selectedIndex, animated: false)
-                    self.showTransientNotice("No open browser tabs found")
+                    if !fetchResult.deniedBrowsers.isEmpty {
+                        let names = fetchResult.deniedBrowsers.joined(separator: ", ")
+                        self.showTransientNotice("Allow Automation for \(names) in Privacy Settings")
+                    } else {
+                        self.showTransientNotice("No open browser tabs found")
+                    }
                     return
                 }
                 self.transientBrowserTabs = freshTabs
