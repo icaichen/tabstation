@@ -18,6 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         installHotKeys()
         setupPreferencesHandlers()
         handlePermissions()
+        UpdateManager.shared.schedulePeriodicChecks()
     }
 
     /// Older builds defaulted `includeBrowserTabs` to enabled; reset it once so the
@@ -107,6 +108,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.delegate = self
         item.menu = menu
         statusItem = item
+
+        NotificationCenter.default.addObserver(
+            forName: .altDeckUpdateStateChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.refreshStatusItemUpdateBadge()
+        }
+        refreshStatusItemUpdateBadge()
+    }
+
+    private func refreshStatusItemUpdateBadge() {
+        guard let button = statusItem?.button else { return }
+        if let release = UpdateManager.shared.availableRelease {
+            button.toolTip = L10n.t(
+                "AltDeck — Update Available (v\(release.version))",
+                "AltDeck — 发现新版本 (v\(release.version))"
+            )
+        } else {
+            button.toolTip = L10n.t("AltDeck — hold ⌥ and tap Tab", "AltDeck — 按住 ⌥ 点按 Tab")
+        }
     }
 
     // MARK: - Actions
@@ -218,6 +240,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.terminate(nil)
     }
 
+    @objc private func checkForUpdates() {
+        UpdateManager.shared.checkForUpdatesManually()
+    }
+
+    @objc private func openAvailableUpdate() {
+        UpdateManager.shared.presentUpdateWindow()
+    }
+
     @objc private func quit() {
         NSApp.terminate(nil)
     }
@@ -232,9 +262,31 @@ extension AppDelegate: NSMenuDelegate {
         let accessibility = Permissions.accessibilityGranted
         let screenRecording = Permissions.screenRecordingGranted
 
-        let title = NSMenuItem(title: "AltDeck", action: nil, keyEquivalent: "")
+        let title = NSMenuItem(
+            title: "AltDeck v\(UpdateManager.shared.currentVersion)",
+            action: nil,
+            keyEquivalent: ""
+        )
         title.isEnabled = false
         menu.addItem(title)
+
+        if let release = UpdateManager.shared.availableRelease {
+            let updateItem = NSMenuItem(
+                title: L10n.t(
+                    "Update Available: v\(release.version)…",
+                    "发现新版本：v\(release.version)…"
+                ),
+                action: #selector(openAvailableUpdate),
+                keyEquivalent: ""
+            )
+            updateItem.target = self
+            updateItem.image = NSImage(
+                systemSymbolName: "arrow.down.circle.fill",
+                accessibilityDescription: nil
+            )
+            updateItem.image?.isTemplate = true
+            menu.addItem(updateItem)
+        }
         menu.addItem(.separator())
 
         menu.addItem(permissionRow(
@@ -376,6 +428,14 @@ extension AppDelegate: NSMenuDelegate {
         menu.addItem(hintsItem)
 
         menu.addItem(.separator())
+
+        let checkUpdates = NSMenuItem(
+            title: L10n.t("Check for Updates…", "检查更新…"),
+            action: #selector(checkForUpdates),
+            keyEquivalent: ""
+        )
+        checkUpdates.target = self
+        menu.addItem(checkUpdates)
 
         let prefs = NSMenuItem(title: L10n.t("Preferences…", "设置…"), action: #selector(showPreferences), keyEquivalent: ",")
         prefs.target = self

@@ -261,10 +261,13 @@ final class PreferencesWindowController: NSWindowController {
     private let showAllSpacesSwitch = NSSwitch()
     private let showMinimizedSwitch = NSSwitch()
     private let launchAtLoginSwitch = NSSwitch()
+    private let autoCheckUpdatesSwitch = NSSwitch()
     private let languageControl = NSSegmentedControl()
     private let accessibilityStatusLabel = NSTextField(labelWithString: "")
     private let screenRecordingStatusLabel = NSTextField(labelWithString: "")
     private let automationStatusLabel = NSTextField(labelWithString: "")
+    private let updateStatusLabel = NSTextField(labelWithString: "")
+    private let checkUpdatesButton = NSButton(title: "", target: nil, action: nil)
 
     private let resetButton = NSButton(title: L10n.t("Restore Defaults", "恢复默认设置"), target: nil, action: nil)
     private let doneButton = NSButton(title: L10n.t("Done", "完成"), target: nil, action: nil)
@@ -279,10 +282,20 @@ final class PreferencesWindowController: NSWindowController {
         window.title = L10n.t("AltDeck Settings", "AltDeck 设置")
         window.isReleasedWhenClosed = false
         self.init(window: window)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleUpdateStateNotification),
+            name: .altDeckUpdateStateChanged,
+            object: nil
+        )
         buildContent()
         reload()
         window.initialFirstResponder = doneButton
         window.center()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     func show() {
@@ -757,7 +770,20 @@ final class PreferencesWindowController: NSWindowController {
             ),
         ])
 
-        return makeCardStack([behaviorCard, permCard])
+        let updatesCard = makeSectionCard(title: L10n.t("Software Updates", "软件更新"), rows: [
+            makeSwitchRow(
+                title: L10n.t("Automatically Check for Updates", "自动检查更新"),
+                subtitle: L10n.t(
+                    "Notify you when a new signed release is available on GitHub.",
+                    "当 GitHub 发布新签名版本时自动弹窗提醒并支持一键更新。"
+                ),
+                toggle: autoCheckUpdatesSwitch,
+                action: #selector(toggleAutoCheckUpdates)
+            ),
+            makeUpdateActionRow(),
+        ])
+
+        return makeCardStack([behaviorCard, updatesCard, permCard])
     }
 
     private func makeCardStack(_ views: [NSView], spacing: CGFloat = 12) -> NSView {
@@ -902,6 +928,42 @@ final class PreferencesWindowController: NSWindowController {
         return row
     }
 
+    private func makeUpdateActionRow() -> NSView {
+        let ver = UpdateManager.shared.currentVersion
+        let titleField = NSTextField(labelWithString: L10n.t("Current Version: v\(ver)", "当前版本：v\(ver)"))
+        titleField.font = .systemFont(ofSize: 12.5, weight: .medium)
+        titleField.textColor = .labelColor
+
+        let subtitleField = NSTextField(wrappingLabelWithString: L10n.t(
+            "One-click download, signature check, and automatic relaunch.",
+            "支持应用内一键下载、校验签名并自动重启完成升级。"
+        ))
+        subtitleField.font = .systemFont(ofSize: 11)
+        subtitleField.textColor = .secondaryLabelColor
+        subtitleField.maximumNumberOfLines = 2
+
+        let textStack = NSStackView(views: [titleField, subtitleField])
+        textStack.orientation = .vertical
+        textStack.alignment = .leading
+        textStack.spacing = 2
+
+        updateStatusLabel.font = .systemFont(ofSize: 11.5, weight: .medium)
+        updateStatusLabel.setContentHuggingPriority(.required, for: .horizontal)
+
+        checkUpdatesButton.title = L10n.t("Check Now…", "立即检查…")
+        checkUpdatesButton.target = self
+        checkUpdatesButton.action = #selector(checkForUpdatesClicked)
+        checkUpdatesButton.bezelStyle = .rounded
+        checkUpdatesButton.controlSize = .small
+        checkUpdatesButton.setContentHuggingPriority(.required, for: .horizontal)
+
+        let row = NSStackView(views: [textStack, updateStatusLabel, checkUpdatesButton])
+        row.orientation = .horizontal
+        row.alignment = .centerY
+        row.spacing = 10
+        return row
+    }
+
     private func makeHorizontalSeparator() -> NSBox {
         let separator = NSBox()
         separator.boxType = .separator
@@ -925,6 +987,8 @@ final class PreferencesWindowController: NSWindowController {
         showMinimizedSwitch.state = UserDefaults.standard.bool(forKey: "TabStation.showMinimized") ? .on : .off
         includeBrowserTabsSwitch.state = FeaturePreferences.includeBrowserTabsByDefault ? .on : .off
         launchAtLoginSwitch.state = LaunchAtLogin.isEnabled ? .on : .off
+        autoCheckUpdatesSwitch.state = UpdateManager.shared.autoCheckEnabled ? .on : .off
+        refreshUpdateStatus()
         if let langIdx = AppLanguage.allCases.firstIndex(of: AppLanguage.current) {
             languageControl.selectedSegment = langIdx
         }
@@ -1151,6 +1215,62 @@ final class PreferencesWindowController: NSWindowController {
     @objc private func toggleLaunchAtLogin(_ sender: NSSwitch) {
         LaunchAtLogin.setEnabled(sender.state == .on)
         sender.state = LaunchAtLogin.isEnabled ? .on : .off
+    }
+
+    @objc private func toggleAutoCheckUpdates(_ sender: NSSwitch) {
+        UpdateManager.shared.autoCheckEnabled = (sender.state == .on)
+    }
+
+    @objc private func checkForUpdatesClicked() {
+        UpdateManager.shared.checkForUpdatesManually()
+    }
+
+    @objc private func handleUpdateStateNotification() {
+        refreshUpdateStatus()
+    }
+
+    private func refreshUpdateStatus() {
+        switch UpdateManager.shared.state {
+        case .checking:
+            updateStatusLabel.stringValue = L10n.t("Checking…", "检查中…")
+            updateStatusLabel.textColor = .secondaryLabelColor
+            checkUpdatesButton.isEnabled = false
+        case .updateAvailable(let rel):
+            updateStatusLabel.stringValue = L10n.t("v\(rel.version) available", "新版本 v\(rel.version)")
+            updateStatusLabel.textColor = .systemOrange
+            checkUpdatesButton.isEnabled = true
+            checkUpdatesButton.title = L10n.t("Update…", "立即更新…")
+        case .downloading(_, let progress, _, _):
+            let pct = Int((progress * 100).rounded())
+            updateStatusLabel.stringValue = L10n.t("Downloading \(pct)%", "下载中 \(pct)%")
+            updateStatusLabel.textColor = .secondaryLabelColor
+            checkUpdatesButton.isEnabled = false
+        case .installing:
+            updateStatusLabel.stringValue = L10n.t("Installing…", "安装中…")
+            updateStatusLabel.textColor = .secondaryLabelColor
+            checkUpdatesButton.isEnabled = false
+        case .upToDate:
+            updateStatusLabel.stringValue = L10n.t("● Up to date", "● 已是最新")
+            updateStatusLabel.textColor = .systemGreen
+            checkUpdatesButton.isEnabled = true
+            checkUpdatesButton.title = L10n.t("Check Now…", "立即检查…")
+        case .error:
+            updateStatusLabel.stringValue = L10n.t("Check failed", "检查失败")
+            updateStatusLabel.textColor = .systemRed
+            checkUpdatesButton.isEnabled = true
+            checkUpdatesButton.title = L10n.t("Retry…", "重试…")
+        case .idle:
+            if let rel = UpdateManager.shared.availableRelease {
+                updateStatusLabel.stringValue = L10n.t("v\(rel.version) available", "新版本 v\(rel.version)")
+                updateStatusLabel.textColor = .systemOrange
+                checkUpdatesButton.title = L10n.t("Update…", "立即更新…")
+            } else {
+                updateStatusLabel.stringValue = L10n.t("v\(UpdateManager.shared.currentVersion)", "v\(UpdateManager.shared.currentVersion)")
+                updateStatusLabel.textColor = .secondaryLabelColor
+                checkUpdatesButton.title = L10n.t("Check Now…", "立即检查…")
+            }
+            checkUpdatesButton.isEnabled = true
+        }
     }
 
     @objc private func openAccessibilityPane() {
