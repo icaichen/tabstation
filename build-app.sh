@@ -79,6 +79,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>NSSupportsAutomaticTermination</key><false/>
     <key>NSSupportsSuddenTermination</key><false/>
     <key>NSAppleEventsUsageDescription</key><string>AltDeck uses Apple Events to list and switch open browser tabs in Chrome, Safari, Arc, Edge, and Brave.</string>
+    <key>NSScreenCaptureUsageDescription</key><string>AltDeck uses Screen Recording only to capture live window thumbnails and read window titles locally on your Mac.</string>
 </dict>
 </plist>
 PLIST

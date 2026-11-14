@@ -1,6 +1,7 @@
 import AppKit
 import ApplicationServices
 import CoreGraphics
+import ScreenCaptureKit
 
 /// TabStation needs two TCC permissions, and both are optional in the sense
 /// that the app stays usable without them — it just gets less capable.
@@ -19,16 +20,31 @@ enum Permissions {
         CGPreflightScreenCaptureAccess()
     }
 
-    /// Shows the system prompt for Accessibility. Safe to call repeatedly —
-    /// macOS only prompts once, after that it's a no-op.
+    /// Shows the system prompt for Accessibility and nudges AX subsystem
+    /// so macOS registers AltDeck in Privacy & Security → Accessibility.
     static func requestAccessibility() {
         let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
-        _ = AXIsProcessTrustedWithOptions([key: true] as CFDictionary)
+        let trusted = AXIsProcessTrustedWithOptions([key: true] as CFDictionary)
+        if !trusted {
+            var focused: CFTypeRef?
+            _ = AXUIElementCopyAttributeValue(
+                AXUIElementCreateSystemWide(),
+                kAXFocusedApplicationAttribute as CFString,
+                &focused
+            )
+        }
     }
 
-    /// Shows the system prompt for Screen Recording. Safe to call repeatedly.
+    /// Triggers Screen Recording registration via CoreGraphics AND ScreenCaptureKit.
+    /// On macOS 15+, ScreenCaptureKit reliably registers the app in
+    /// Privacy & Security → Screen & System Audio Recording when promptable.
     static func requestScreenRecording() {
-        _ = CGRequestScreenCaptureAccess()
+        let granted = CGRequestScreenCaptureAccess()
+        if !granted {
+            Task.detached(priority: .userInitiated) {
+                _ = try? await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
+            }
+        }
     }
 
     enum AutomationStatus: Equatable {
@@ -79,6 +95,10 @@ enum Permissions {
 
     static func openAutomationSettings() {
         open("Privacy_Automation")
+    }
+
+    static func revealAppInFinder() {
+        NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL])
     }
 
     private static func open(_ pane: String) {

@@ -12,20 +12,22 @@ final class PermissionsOnboardingController: NSWindowController {
     private var srButton = NSButton(title: "", target: nil, action: nil)
     private var primaryButton = NSButton(title: "", target: nil, action: nil)
     private var secondaryButton = NSButton(title: "", target: nil, action: nil)
+    private var revealButton = NSButton(title: "", target: nil, action: nil)
     private var hintLabel = NSTextField(wrappingLabelWithString: "")
 
     private var initialScreenRecordingGranted = Permissions.screenRecordingGranted
     private var didTriggerAxPromptThisSession = false
+    private var didTriggerSrPromptThisSession = false
 
     convenience init() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 490, height: 392),
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 406),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
         window.isReleasedWhenClosed = false
-        window.level = .floating
+        window.level = .normal
         self.init(window: window)
 
         NotificationCenter.default.addObserver(
@@ -148,7 +150,7 @@ final class PermissionsOnboardingController: NSWindowController {
         hintLabel = NSTextField(wrappingLabelWithString: "")
         hintLabel.font = .systemFont(ofSize: 11)
         hintLabel.textColor = .secondaryLabelColor
-        hintLabel.maximumNumberOfLines = 2
+        hintLabel.maximumNumberOfLines = 3
         hintLabel.translatesAutoresizingMaskIntoConstraints = false
 
         secondaryButton = NSButton(
@@ -157,6 +159,13 @@ final class PermissionsOnboardingController: NSWindowController {
             action: #selector(laterClicked)
         )
         secondaryButton.bezelStyle = .rounded
+
+        revealButton = NSButton(
+            title: L10n.t("Reveal in Finder", "在访达中定位"),
+            target: self,
+            action: #selector(revealAppClicked)
+        )
+        revealButton.bezelStyle = .rounded
 
         primaryButton = NSButton(
             title: L10n.t("Done", "完成并开始使用"),
@@ -169,9 +178,10 @@ final class PermissionsOnboardingController: NSWindowController {
         let spacer = NSView()
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        let footerRow = NSStackView(views: [secondaryButton, spacer, primaryButton])
+        let footerRow = NSStackView(views: [secondaryButton, revealButton, spacer, primaryButton])
         footerRow.orientation = .horizontal
         footerRow.alignment = .centerY
+        footerRow.spacing = 8
         footerRow.translatesAutoresizingMaskIntoConstraints = false
 
         let mainStack = NSStackView(views: [headerRow, axCard, srCard, hintLabel, footerRow])
@@ -300,18 +310,28 @@ final class PermissionsOnboardingController: NSWindowController {
             : L10n.t("● Required", "● 需授权")
         axStatusLabel.textColor = axGranted ? .systemGreen : .systemOrange
         axButton.isEnabled = !axGranted
-        axButton.title = axGranted
-            ? L10n.t("Enabled", "已开启")
-            : L10n.t("Grant Accessibility…", "授权辅助功能…")
+        if axGranted {
+            axButton.title = L10n.t("Enabled", "已开启")
+        } else if didTriggerAxPromptThisSession {
+            axButton.title = L10n.t("Open System Settings…", "打开系统设置…")
+        } else {
+            axButton.title = L10n.t("Grant Accessibility…", "授权辅助功能…")
+        }
 
         srStatusLabel.stringValue = srGranted
             ? L10n.t("● Granted", "● 已授权")
             : L10n.t("● Optional", "● 可选")
         srStatusLabel.textColor = srGranted ? .systemGreen : .secondaryLabelColor
         srButton.isEnabled = !srGranted
-        srButton.title = srGranted
-            ? L10n.t("Enabled", "已开启")
-            : L10n.t("Grant Screen Recording…", "授权屏幕录制…")
+        if srGranted {
+            srButton.title = L10n.t("Enabled", "已开启")
+        } else if didTriggerSrPromptThisSession {
+            srButton.title = L10n.t("Open System Settings…", "打开系统设置…")
+        } else {
+            srButton.title = L10n.t("Grant Screen Recording…", "授权屏幕录制…")
+        }
+
+        revealButton.isHidden = axGranted && srGranted
 
         let needsRelaunchForSR = srGranted && !initialScreenRecordingGranted
         if needsRelaunchForSR {
@@ -320,6 +340,22 @@ final class PermissionsOnboardingController: NSWindowController {
                 "已开启屏幕录制权限，点击右侧“重启 AltDeck”后缩略图预览将立即生效。"
             )
             primaryButton.title = L10n.t("Relaunch AltDeck", "重启 AltDeck")
+            primaryButton.isEnabled = true
+        } else if didTriggerSrPromptThisSession && !srGranted {
+            hintLabel.stringValue = L10n.t(
+                "Allow AltDeck in the macOS prompt, or click “Open System Settings…” above. If AltDeck isn't listed (e.g. previously removed/denied), click “+” in Settings or drag AltDeck from Finder.",
+                "请在系统弹窗中点击“允许”，或再次点击上方“打开系统设置…”。若列表中未自动出现 AltDeck（如曾手动移除或拒绝），可在设置底部点“+”添加，或点击“在访达中定位”拖入。"
+            )
+            primaryButton.title = axGranted
+                ? L10n.t("Start Using AltDeck", "开始使用 AltDeck")
+                : L10n.t("Done", "完成")
+            primaryButton.isEnabled = true
+        } else if didTriggerAxPromptThisSession && !axGranted {
+            hintLabel.stringValue = L10n.t(
+                "Click “Open System Settings” in the macOS prompt (or click “Open System Settings…” above) and toggle AltDeck ON. If missing from the list, click “+” or drag AltDeck from Finder.",
+                "请在系统弹窗中点击“打开系统设置”（或再次点击上方“打开系统设置…”），然后开启 AltDeck。若列表中未显示，请点底部“+”添加或点击“在访达中定位”拖入。"
+            )
+            primaryButton.title = L10n.t("Done", "完成")
             primaryButton.isEnabled = true
         } else if axGranted {
             let shortcut = ShortcutStore.load(.primary).displayString
@@ -331,8 +367,8 @@ final class PermissionsOnboardingController: NSWindowController {
             primaryButton.isEnabled = true
         } else {
             hintLabel.stringValue = L10n.t(
-                "Click “Grant Accessibility…” above and toggle AltDeck ON in System Settings → Privacy & Security.",
-                "点击上方“授权辅助功能…”，并在 系统设置 → 隐私与安全性 中开启 AltDeck。"
+                "Click “Grant Accessibility…” above to open the macOS prompt and add AltDeck to Privacy & Security.",
+                "点击上方“授权辅助功能…”触发系统弹窗，并将 AltDeck 添加到 隐私与安全性 列表。"
             )
             primaryButton.title = L10n.t("Done", "完成")
             primaryButton.isEnabled = true
@@ -345,23 +381,26 @@ final class PermissionsOnboardingController: NSWindowController {
         if !didTriggerAxPromptThisSession {
             didTriggerAxPromptThisSession = true
             Permissions.requestAccessibility()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                if !Permissions.accessibilityGranted {
-                    Permissions.openAccessibilitySettings()
-                }
-            }
+            refreshStatus()
         } else {
+            Permissions.requestAccessibility()
             Permissions.openAccessibilitySettings()
         }
     }
 
     @objc private func requestScreenRecordingClicked() {
-        Permissions.requestScreenRecording()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-            if !Permissions.screenRecordingGranted {
-                Permissions.openScreenRecordingSettings()
-            }
+        if !didTriggerSrPromptThisSession {
+            didTriggerSrPromptThisSession = true
+            Permissions.requestScreenRecording()
+            refreshStatus()
+        } else {
+            Permissions.requestScreenRecording()
+            Permissions.openScreenRecordingSettings()
         }
+    }
+
+    @objc private func revealAppClicked() {
+        Permissions.revealAppInFinder()
     }
 
     @objc private func laterClicked() {

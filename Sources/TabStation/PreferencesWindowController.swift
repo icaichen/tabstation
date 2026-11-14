@@ -1154,10 +1154,16 @@ final class PreferencesWindowController: NSWindowController {
     }
 
     @objc private func openAccessibilityPane() {
+        if !Permissions.accessibilityGranted {
+            Permissions.requestAccessibility()
+        }
         Permissions.openAccessibilitySettings()
     }
 
     @objc private func openScreenRecordingPane() {
+        if !Permissions.screenRecordingGranted {
+            Permissions.requestScreenRecording()
+        }
         Permissions.openScreenRecordingSettings()
     }
 
