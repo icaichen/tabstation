@@ -31,7 +31,7 @@ DMG_OUT="$ROOT/dist/AltDeck-v${VERSION}-macOS.dmg"
 WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/altdeck-release.XXXXXX")"
 trap 'rm -rf "$WORK_DIR"' EXIT
 CLEAN_APP="$WORK_DIR/AltDeck.app"
-cp -R "$DIST_APP" "$CLEAN_APP"
+ditto "$DIST_APP" "$CLEAN_APP"
 xattr -cr "$CLEAN_APP"
 
 CS_INFO="$(codesign -dvv "$CLEAN_APP" 2>&1)"
@@ -48,7 +48,7 @@ codesign -d --entitlements - "$CLEAN_APP"
 echo "==> Creating DMG image ($DMG_OUT)…"
 DMG_STAGE="$WORK_DIR/dmg-root"
 mkdir -p "$DMG_STAGE"
-cp -R "$CLEAN_APP" "$DMG_STAGE/AltDeck.app"
+ditto "$CLEAN_APP" "$DMG_STAGE/AltDeck.app"
 xattr -cr "$DMG_STAGE/AltDeck.app"
 ln -s /Applications "$DMG_STAGE/Applications"
 
@@ -64,8 +64,10 @@ if [[ "$DO_NOTARIZE" == "1" ]]; then
   xcrun stapler staple "$CLEAN_APP"
 
   echo "==> Rebuilding & notarizing DMG with stapled App (profile: $NOTARY_PROFILE)…"
-  cp -R "$CLEAN_APP" "$DMG_STAGE/AltDeck.app"
+  rm -rf "$DMG_STAGE/AltDeck.app"
+  ditto "$CLEAN_APP" "$DMG_STAGE/AltDeck.app"
   xattr -cr "$DMG_STAGE/AltDeck.app"
+  codesign --verify --deep --strict -vvv "$DMG_STAGE/AltDeck.app"
   hdiutil create -volname "AltDeck" -srcfolder "$DMG_STAGE" -ov -format UDZO "$TMP_DMG" >/dev/null
   codesign --force --sign "$SIGN_IDENTITY" --timestamp "$TMP_DMG"
   xcrun notarytool submit "$TMP_DMG" --keychain-profile "$NOTARY_PROFILE" --wait
