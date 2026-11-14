@@ -8,15 +8,18 @@
 # unsigned binary can be denied or lose its grant on every rebuild.
 #
 # Usage:  ./build-app.sh [debug|release]
+# Env:    UNIVERSAL=1   Build fat binary (arm64 + x86_64) for distribution
 
 set -euo pipefail
 
 CONFIG="${1:-release}"
+UNIVERSAL="${UNIVERSAL:-0}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_NAME="AltDeck"
 BUNDLE_ID="com.tabstation.TabStation"
 VERSION="1.0.0"
 APP="$ROOT/dist/$APP_NAME.app"
+ENTITLEMENTS="$ROOT/Resources/AltDeck.entitlements"
 
 # Keep build artefacts off the project directory. When the project lives on a
 # file-synced Desktop, building in-tree makes every SDK stat-cache read a network
@@ -34,7 +37,11 @@ fi
 export DEVELOPER_DIR="${DEVELOPER_DIR:-$(xcode-select -p)}"
 
 swift_build() {
-  swift build --configuration "$CONFIG" --package-path "$ROOT" --scratch-path "$SCRATCH" "$@"
+  local arch_flags=()
+  if [[ "$UNIVERSAL" == "1" ]]; then
+    arch_flags=(--arch arm64 --arch x86_64)
+  fi
+  swift build --configuration "$CONFIG" "${arch_flags[@]}" --package-path "$ROOT" --scratch-path "$SCRATCH" "$@"
 }
 
 echo "==> Building ($CONFIG)…"
@@ -101,11 +108,19 @@ else
 fi
 rm -rf "$ICONSET"
 
-SIGNING_IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | awk -F'"' '/Apple Development/{print $2}' | head -n1)"
 if [[ -n "${SIGNING_IDENTITY:-}" ]]; then
   SIGN_ARG="$SIGNING_IDENTITY"
 else
-  SIGN_ARG="-"
+  # Prefer Developer ID Application (distributable + notarizable) over Apple Development, fallback to ad-hoc.
+  DEV_ID="$(security find-identity -v -p codesigning 2>/dev/null | awk -F'"' '/Developer ID Application/{print $2}' | head -n1)"
+  APPLE_DEV="$(security find-identity -v -p codesigning 2>/dev/null | awk -F'"' '/Apple Development/{print $2}' | head -n1)"
+  if [[ -n "${DEV_ID:-}" ]]; then
+    SIGN_ARG="$DEV_ID"
+  elif [[ -n "${APPLE_DEV:-}" ]]; then
+    SIGN_ARG="$APPLE_DEV"
+  else
+    SIGN_ARG="-"
+  fi
 fi
 
 STAGE="$(mktemp -d "${TMPDIR:-/tmp}/tabstation-stage.XXXXXX")"
@@ -113,14 +128,22 @@ trap 'rm -rf "$STAGE"' EXIT
 cp -R "$APP" "$STAGE/$APP_NAME.app"
 
 xattr -cr "$STAGE/$APP_NAME.app"
+ENT_FLAGS=()
+if [[ -f "$ENTITLEMENTS" ]]; then
+  ENT_FLAGS=(--entitlements "$ENTITLEMENTS")
+fi
+
 if [[ "$SIGN_ARG" == "-" ]]; then
-  if ! codesign --force --sign - --timestamp=none --identifier "$BUNDLE_ID" -r="designated => identifier \"$BUNDLE_ID\"" "$STAGE/$APP_NAME.app" >/dev/null 2>&1; then
-    codesign --force --sign - --timestamp=none --identifier "$BUNDLE_ID" "$STAGE/$APP_NAME.app" >/dev/null 2>&1
+  if ! codesign --force --sign - --timestamp=none --identifier "$BUNDLE_ID" "${ENT_FLAGS[@]}" -r="designated => identifier \"$BUNDLE_ID\"" "$STAGE/$APP_NAME.app" >/dev/null 2>&1; then
+    codesign --force --sign - --timestamp=none --identifier "$BUNDLE_ID" "${ENT_FLAGS[@]}" "$STAGE/$APP_NAME.app" >/dev/null 2>&1
   fi
+elif [[ "$SIGN_ARG" == "Developer ID Application:"* ]]; then
+  # Hardened Runtime + secure timestamp are required for Apple Notarization.
+  codesign --force --sign "$SIGN_ARG" --options runtime --timestamp --identifier "$BUNDLE_ID" "${ENT_FLAGS[@]}" "$STAGE/$APP_NAME.app"
 else
-  if ! codesign --force --sign "$SIGN_ARG" --timestamp=none --identifier "$BUNDLE_ID" "$STAGE/$APP_NAME.app" >/dev/null 2>&1; then
+  if ! codesign --force --sign "$SIGN_ARG" --timestamp=none --identifier "$BUNDLE_ID" "${ENT_FLAGS[@]}" "$STAGE/$APP_NAME.app" >/dev/null 2>&1; then
     echo "    error: codesign with $SIGN_ARG failed, falling back to ad-hoc" >&2
-    codesign --force --sign - --timestamp=none --identifier "$BUNDLE_ID" "$STAGE/$APP_NAME.app" >/dev/null 2>&1
+    codesign --force --sign - --timestamp=none --identifier "$BUNDLE_ID" "${ENT_FLAGS[@]}" "$STAGE/$APP_NAME.app" >/dev/null 2>&1
   fi
 fi
 

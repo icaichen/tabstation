@@ -5,15 +5,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let interceptor = HotKeyInterceptor()
     private lazy var controller = SwitcherController()
     private lazy var preferences = PreferencesWindowController()
+    private lazy var onboarding = PermissionsOnboardingController()
     private var statusItem: NSStatusItem?
-    private var didAskForPermissions = false
 
     // MARK: - Launch
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         migrateLegacyDefaultsIfNeeded()
         Theme.configure()
-        didAskForPermissions = UserDefaults.standard.bool(forKey: "TabStation.didAskForPermissions")
 
         installStatusItem()
         installHotKeys()
@@ -64,9 +63,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         if !interceptor.install() {
-            // The tap could not be created: Accessibility is denied, so there is
-            // no way to observe ⌥Tab at all. Say so loudly, once.
-            showAccessibilityRequiredAlert()
+            // Accessibility is not granted yet; `handlePermissions()` presents the
+            // step-by-step setup window, and the DistributedNotificationCenter observer
+            // below installs the CGEventTap automatically as soon as the user enables it.
         }
 
         // Automatically enable CGEventTap without requiring a relaunch once the user grants Accessibility.
@@ -85,31 +84,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Permissions
 
     private func handlePermissions() {
-        let needsAccessibility = !Permissions.accessibilityGranted
-        let needsScreenRecording = !Permissions.screenRecordingGranted
-
-        if needsAccessibility || needsScreenRecording {
-            if !didAskForPermissions {
-                didAskForPermissions = true
-                UserDefaults.standard.set(true, forKey: "TabStation.didAskForPermissions")
-                if needsAccessibility {
-                    Permissions.requestAccessibility()
-                }
-                if needsScreenRecording {
-                    Permissions.requestScreenRecording()
-                }
-            }
-            if needsAccessibility {
-                showAccessibilityRequiredAlert()
-            }
+        guard !Permissions.accessibilityGranted else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            self?.onboarding.show()
         }
     }
-
-    private func showAccessibilityRequiredAlert() {
-        // Silent: non-blocking, never pop up modal alerts to disrupt the user.
-    }
-
-    private var hasShownAlert = false
 
     // MARK: - Status item
 
@@ -226,12 +205,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func requestPermissions() {
-        if !Permissions.accessibilityGranted {
-            Permissions.requestAccessibility()
-        }
-        if !Permissions.screenRecordingGranted {
-            Permissions.requestScreenRecording()
-        }
+        onboarding.show()
     }
 
     @objc private func relaunch() {
