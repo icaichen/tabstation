@@ -106,7 +106,7 @@ final class UpdateManager: NSObject, URLSessionDownloadDelegate {
     private var updateWindowController: UpdateWindowController?
 
     var currentVersion: String {
-        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "1.0.0"
+        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "1.0.1"
     }
 
     var autoCheckEnabled: Bool {

@@ -17,7 +17,11 @@ UNIVERSAL="${UNIVERSAL:-0}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_NAME="AltDeck"
 BUNDLE_ID="com.tabstation.TabStation"
-VERSION="1.0.0"
+if [[ -f "$ROOT/VERSION" ]]; then
+  VERSION="$(tr -d '[:space:]' < "$ROOT/VERSION")"
+else
+  VERSION="1.0.1"
+fi
 APP="$ROOT/dist/$APP_NAME.app"
 ENTITLEMENTS="$ROOT/Resources/AltDeck.entitlements"
 
