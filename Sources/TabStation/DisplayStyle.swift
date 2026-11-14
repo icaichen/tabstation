@@ -316,6 +316,7 @@ enum FeaturePreferences {
         static let arrowKeySnapping = "TabStation.arrowKeySnapping"
         static let spaceQuickLook = "TabStation.spaceQuickLook"
         static let hoverActionPills = "TabStation.hoverActionPills"
+        static let hoverSelect = "TabStation.hoverSelect"
         static let pinShortcut = "TabStation.pinShortcut"
         static let displayMoveShortcut = "TabStation.displayMoveShortcut"
         static let browserTabsShortcut = "TabStation.browserTabsShortcut"
@@ -342,6 +343,15 @@ enum FeaturePreferences {
         get { UserDefaults.standard.object(forKey: Keys.hoverActionPills) as? Bool ?? true }
         set {
             UserDefaults.standard.set(newValue, forKey: Keys.hoverActionPills)
+            postChange()
+        }
+    }
+
+    /// When true, moving the mouse over a card selects that window or tab; keyboard-only users can disable this.
+    static var hoverSelectEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: Keys.hoverSelect) as? Bool ?? true }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Keys.hoverSelect)
             postChange()
         }
     }
@@ -383,6 +393,7 @@ enum FeaturePreferences {
             Keys.arrowKeySnapping,
             Keys.spaceQuickLook,
             Keys.hoverActionPills,
+            Keys.hoverSelect,
             Keys.pinShortcut,
             Keys.displayMoveShortcut,
             Keys.browserTabsShortcut,

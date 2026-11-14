@@ -418,7 +418,11 @@ final class SwitcherView: NSView {
                 self?.allowMouseHover() ?? true
             }
             cell.onHover = { [weak self] _ in
-                guard let self, self.allowMouseHover(), self.selectedIndex != index else { return }
+                guard let self,
+                      FeaturePreferences.hoverSelectEnabled,
+                      self.allowMouseHover(),
+                      self.selectedIndex != index
+                else { return }
                 self.setSelection(index, animated: false)
                 self.onHover?(index)
             }

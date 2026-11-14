@@ -427,11 +427,19 @@ final class UpdateManager: NSObject, URLSessionDownloadDelegate {
             return
         }
 
-        // 3. Verify strict code signature & bundle identifier before replacing
+        // 3. Verify strict code signature, bundle identifier, and Team ID (when Developer-ID signed)
         let verifyStatus = runTool("/usr/bin/codesign", args: ["--verify", "--deep", "--strict", extractedApp.path])
         let newBundleID = Bundle(url: extractedApp)?.bundleIdentifier
         let expectedBundleID = Bundle.main.bundleIdentifier ?? "com.tabstation.TabStation"
-        guard verifyStatus == 0, newBundleID == expectedBundleID else {
+        let currentTeamID = codesignTeamIdentifier(for: Bundle.main.bundleURL)
+        let candidateTeamID = codesignTeamIdentifier(for: extractedApp)
+        let teamMatches: Bool = {
+            guard let currentTeamID, !currentTeamID.isEmpty, currentTeamID != "not set" else {
+                return true
+            }
+            return candidateTeamID == currentTeamID
+        }()
+        guard verifyStatus == 0, newBundleID == expectedBundleID, teamMatches else {
             finishInstallWithError(
                 L10n.t("Update signature verification failed. Please download directly from GitHub.", "更新包签名校验未通过，为安全起见已取消自动覆盖，请前往 GitHub 手动下载。"),
                 cleanupDir: stagingDir
@@ -470,7 +478,9 @@ final class UpdateManager: NSObject, URLSessionDownloadDelegate {
             return
         }
 
-        // Standard user-writable replacement: wait for current PID exit, swap atomically, relaunch
+        // Standard user-writable replacement: wait for current PID exit, swap atomically, relaunch.
+        // If replacement fails (e.g., macOS App Management permission denied), restore backup, relaunch current app,
+        // and reveal the verified new AltDeck.app in Finder so the user is never stranded.
         let scriptURL = stagingDir.appendingPathComponent("relaunch-update.sh")
         let helperScript = """
         #!/bin/sh
@@ -480,18 +490,29 @@ final class UpdateManager: NSObject, URLSessionDownloadDelegate {
         STAGE="$4"
         while kill -0 "$PID" 2>/dev/null; do sleep 0.12; done
         rm -rf "${DST}.bak"
+        REPLACED=0
         if [ -d "$DST" ]; then
-          mv "$DST" "${DST}.bak" || exit 1
+          if mv "$DST" "${DST}.bak" 2>/dev/null; then
+            if /usr/bin/ditto "$SRC" "$DST" 2>/dev/null; then
+              REPLACED=1
+            else
+              [ -d "${DST}.bak" ] && mv "${DST}.bak" "$DST" 2>/dev/null
+            fi
+          fi
+        else
+          if /usr/bin/ditto "$SRC" "$DST" 2>/dev/null; then
+            REPLACED=1
+          fi
         fi
-        if /usr/bin/ditto "$SRC" "$DST"; then
+        if [ "$REPLACED" -eq 1 ]; then
           /usr/bin/xattr -dr com.apple.quarantine "$DST" 2>/dev/null || true
           rm -rf "${DST}.bak"
           /usr/bin/open -n "$DST"
+          rm -rf "$STAGE"
         else
-          [ -d "${DST}.bak" ] && mv "${DST}.bak" "$DST"
-          /usr/bin/open -n "$DST"
+          /usr/bin/open -n "$DST" 2>/dev/null || true
+          /usr/bin/open -R "$SRC" 2>/dev/null || true
         fi
-        rm -rf "$STAGE"
         """
         do {
             try helperScript.write(to: scriptURL, atomically: true, encoding: .utf8)
@@ -547,6 +568,31 @@ final class UpdateManager: NSObject, URLSessionDownloadDelegate {
             }
         }
         return nil
+    }
+
+    private func codesignTeamIdentifier(for appURL: URL) -> String? {
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/usr/bin/codesign")
+        proc.arguments = ["-dvv", appURL.path]
+        let errPipe = Pipe()
+        proc.standardOutput = Pipe()
+        proc.standardError = errPipe
+        do {
+            try proc.run()
+            let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
+            proc.waitUntilExit()
+            guard proc.terminationStatus == 0,
+                  let text = String(data: errData, encoding: .utf8)
+            else { return nil }
+            for line in text.split(separator: "\n") {
+                if line.hasPrefix("TeamIdentifier=") {
+                    return String(line.dropFirst("TeamIdentifier=".count)).trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+            }
+            return nil
+        } catch {
+            return nil
+        }
     }
 
     private func runTool(_ path: String, args: [String]) -> Int32 {

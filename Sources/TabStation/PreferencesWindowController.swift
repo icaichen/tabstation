@@ -249,6 +249,7 @@ final class PreferencesWindowController: NSWindowController {
     private let arrowKeySnappingSwitch = NSSwitch()
     private let autoPreviewOnHoldSwitch = NSSwitch()
     private let spaceQuickLookSwitch = NSSwitch()
+    private let hoverSelectSwitch = NSSwitch()
     private let hoverActionPillsSwitch = NSSwitch()
     private let displayMoveShortcutSwitch = NSSwitch()
     private let pinShortcutSwitch = NSSwitch()
@@ -561,6 +562,15 @@ final class PreferencesWindowController: NSWindowController {
                 ),
                 toggle: spaceQuickLookSwitch,
                 action: #selector(toggleSpaceQuickLook)
+            ),
+            makeSwitchRow(
+                title: L10n.t("Select Window on Mouse Hover", "鼠标悬停选中窗口"),
+                subtitle: L10n.t(
+                    "Highlight and target windows when moving the pointer over cards (only after the cursor moves).",
+                    "移动鼠标经过卡片时高亮并选中对应窗口（仅在光标移动后触发）。"
+                ),
+                toggle: hoverSelectSwitch,
+                action: #selector(toggleHoverSelect)
             ),
             makeSwitchRow(
                 title: L10n.t("Hover Quick-Action Pills", "悬停快捷操作按钮"),
@@ -996,6 +1006,7 @@ final class PreferencesWindowController: NSWindowController {
         arrowKeySnappingSwitch.state = FeaturePreferences.arrowKeySnappingEnabled ? .on : .off
         autoPreviewOnHoldSwitch.state = AppearancePreferences.autoPreviewOnHold ? .on : .off
         spaceQuickLookSwitch.state = FeaturePreferences.spaceQuickLookEnabled ? .on : .off
+        hoverSelectSwitch.state = FeaturePreferences.hoverSelectEnabled ? .on : .off
         hoverActionPillsSwitch.state = FeaturePreferences.hoverActionPillsEnabled ? .on : .off
         displayMoveShortcutSwitch.state = FeaturePreferences.displayMoveShortcutEnabled ? .on : .off
         pinShortcutSwitch.state = FeaturePreferences.pinShortcutEnabled ? .on : .off
@@ -1162,6 +1173,11 @@ final class PreferencesWindowController: NSWindowController {
 
     @objc private func toggleSpaceQuickLook(_ sender: NSSwitch) {
         FeaturePreferences.spaceQuickLookEnabled = sender.state == .on
+        onAppearanceChange?()
+    }
+
+    @objc private func toggleHoverSelect(_ sender: NSSwitch) {
+        FeaturePreferences.hoverSelectEnabled = sender.state == .on
         onAppearanceChange?()
     }
 

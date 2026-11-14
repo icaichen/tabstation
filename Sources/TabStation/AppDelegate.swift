@@ -96,11 +96,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func installStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = item.button {
-            button.image = NSImage(
-                systemSymbolName: "square.stack.3d.up.fill",
-                accessibilityDescription: "AltDeck"
-            )
-            button.image?.isTemplate = true
+            let icon = Self.makeMenuBarLogoImage()
+            icon.accessibilityDescription = "AltDeck"
+            button.image = icon
             button.toolTip = L10n.t("AltDeck — hold ⌥ and tap Tab", "AltDeck — 按住 ⌥ 点按 Tab")
         }
 
@@ -117,6 +115,52 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.refreshStatusItemUpdateBadge()
         }
         refreshStatusItemUpdateBadge()
+    }
+
+    /// Vector template silhouette matching AltDeck's stacked-window-cards logo (18x18pt, Dark/Light menu bar adaptive).
+    static func makeMenuBarLogoImage() -> NSImage {
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size, flipped: false) { _ in
+            NSGraphicsContext.saveGraphicsState()
+            defer { NSGraphicsContext.restoreGraphicsState() }
+
+            let cards: [(rect: NSRect, fillAlpha: CGFloat, strokeAlpha: CGFloat, lineWidth: CGFloat)] = [
+                (NSRect(x: 1.6, y: 6.4, width: 9.8, height: 8.6), 0.16, 0.62, 1.1),
+                (NSRect(x: 4.1, y: 4.3, width: 9.8, height: 8.6), 0.28, 0.82, 1.2),
+                (NSRect(x: 6.6, y: 2.2, width: 9.8, height: 8.6), 0.14, 1.00, 1.4),
+            ]
+
+            for (index, card) in cards.enumerated() {
+                let path = NSBezierPath(roundedRect: card.rect, xRadius: 2.2, yRadius: 2.2)
+                if index > 0 {
+                    NSGraphicsContext.current?.compositingOperation = .clear
+                    let maskPath = NSBezierPath(
+                        roundedRect: card.rect.insetBy(dx: -0.4, dy: -0.4),
+                        xRadius: 2.4,
+                        yRadius: 2.4
+                    )
+                    maskPath.fill()
+                    NSGraphicsContext.current?.compositingOperation = .sourceOver
+                }
+
+                NSColor.black.withAlphaComponent(card.fillAlpha).setFill()
+                path.fill()
+
+                NSColor.black.withAlphaComponent(card.strokeAlpha).setStroke()
+                path.lineWidth = card.lineWidth
+                path.stroke()
+            }
+
+            // Crisp active window header bar inside the frontmost card
+            let headerRect = NSRect(x: 8.1, y: 8.2, width: 6.8, height: 1.4)
+            let headerPath = NSBezierPath(roundedRect: headerRect, xRadius: 0.7, yRadius: 0.7)
+            NSColor.black.withAlphaComponent(0.95).setFill()
+            headerPath.fill()
+
+            return true
+        }
+        image.isTemplate = true
+        return image
     }
 
     private func refreshStatusItemUpdateBadge() {
