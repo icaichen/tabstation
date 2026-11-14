@@ -269,6 +269,8 @@ final class SwitcherView: NSView {
 
     private var lastAvailableWidth: CGFloat = 1280
     private var lastAvailableHeight: CGFloat = 800
+    private var mouseAnchorOnPresent: NSPoint = .zero
+    private var hasMouseMovedSincePresent = true
 
     var onActivate: ((Int) -> Void)?
     var onHover: ((Int) -> Void)?
@@ -412,8 +414,11 @@ final class SwitcherView: NSView {
                 style: currentStyle
             )
             cell.onActivate = { [weak self] in self?.onActivate?(index) }
+            cell.canActivateHover = { [weak self] in
+                self?.allowMouseHover() ?? true
+            }
             cell.onHover = { [weak self] _ in
-                guard let self, self.selectedIndex != index else { return }
+                guard let self, self.allowMouseHover(), self.selectedIndex != index else { return }
                 self.setSelection(index, animated: false)
                 self.onHover?(index)
             }
@@ -620,7 +625,24 @@ final class SwitcherView: NSView {
         return result
     }
 
-    // MARK: - Mouse Clicks
+    // MARK: - Mouse Hover Guard & Clicks
+
+    /// Prevents a stationary cursor resting beneath the newly opened switcher panel
+    /// from hijacking selection before the user actually moves the mouse.
+    func armMouseHoverGuard() {
+        mouseAnchorOnPresent = NSEvent.mouseLocation
+        hasMouseMovedSincePresent = false
+    }
+
+    private func allowMouseHover() -> Bool {
+        if hasMouseMovedSincePresent { return true }
+        let current = NSEvent.mouseLocation
+        if hypot(current.x - mouseAnchorOnPresent.x, current.y - mouseAnchorOnPresent.y) > 4.0 {
+            hasMouseMovedSincePresent = true
+            return true
+        }
+        return false
+    }
 
     override func mouseDown(with event: NSEvent) {
         let pointInDoc = documentView.convert(event.locationInWindow, from: nil)
@@ -633,12 +655,26 @@ final class SwitcherView: NSView {
 
     // MARK: - Thumbnails
 
+    func applyThumbnail(_ image: NSImage?, at index: Int, windowID: CGWindowID) {
+        if index >= 0, index < cells.count, cells[index].info.id == windowID {
+            let cell = cells[index]
+            if let image {
+                cell.setThumbnail(image)
+            } else {
+                cell.showFallbackIcon()
+            }
+            return
+        }
+        applyThumbnail(image, toWindowID: windowID)
+    }
+
     func applyThumbnail(_ image: NSImage?, toWindowID id: CGWindowID) {
-        guard let cell = cells.first(where: { $0.info.id == id }) else { return }
-        if let image {
-            cell.setThumbnail(image)
-        } else {
-            cell.showFallbackIcon()
+        for cell in cells where cell.info.id == id {
+            if let image {
+                cell.setThumbnail(image)
+            } else {
+                cell.showFallbackIcon()
+            }
         }
     }
 

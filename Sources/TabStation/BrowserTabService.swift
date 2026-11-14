@@ -49,11 +49,24 @@ final class BrowserTabService {
         var result: [WindowInfo] = []
         var deniedBrowsers: [String] = []
         let runningApps = NSWorkspace.shared.runningApplications
+        let openWindowPIDs = Self.pidsWithOpenBrowserWindows()
 
         for browser in browsers {
+            // Strictly match a live, regular GUI app by exact bundle ID — never match
+            // background/helper processes by name alone, and never send Apple Events
+            // if the browser currently has zero open windows (prevents LaunchServices
+            // from waking or opening Arc/Chrome when closed to Dock/helpers).
             guard let app = runningApps.first(where: {
-                $0.bundleIdentifier == browser.bundleID || $0.localizedName == browser.name
+                $0.bundleIdentifier == browser.bundleID
+                    && $0.activationPolicy == .regular
+                    && !$0.isTerminated
+                    && $0.isFinishedLaunching
             }) else {
+                continue
+            }
+
+            let pid = app.processIdentifier
+            guard openWindowPIDs.contains(pid) else {
                 continue
             }
 
@@ -70,7 +83,7 @@ final class BrowserTabService {
                 continue
             }
 
-            let (tabs, deniedByScript) = queryTabs(for: browser, pid: app.processIdentifier)
+            let (tabs, deniedByScript) = queryTabs(for: browser, pid: pid)
             if deniedByScript {
                 deniedBrowsers.append(browser.name)
             } else {
@@ -81,6 +94,25 @@ final class BrowserTabService {
         return FetchResult(tabs: result, deniedBrowsers: deniedBrowsers)
     }
 
+    /// Returns PIDs that currently own at least one standard Layer-0 window in WindowServer.
+    private static func pidsWithOpenBrowserWindows() -> Set<pid_t> {
+        guard let raw = CGWindowListCopyWindowInfo([.excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {
+            return []
+        }
+        var pids = Set<pid_t>()
+        for entry in raw {
+            guard let layer = (entry[kCGWindowLayer as String] as? NSNumber)?.intValue, layer == 0,
+                  let ownerPID = (entry[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value,
+                  let boundsDict = entry[kCGWindowBounds as String] as? NSDictionary,
+                  let bounds = CGRect(dictionaryRepresentation: boundsDict),
+                  bounds.width >= 100, bounds.height >= 100 else {
+                continue
+            }
+            pids.insert(ownerPID)
+        }
+        return pids
+    }
+
     private func compiledTabScript(for browser: SupportedBrowser) -> NSAppleScript? {
         if let existing = compiledTabScripts[browser.bundleID] {
             return existing
@@ -89,7 +121,7 @@ final class BrowserTabService {
         let scriptSource = """
         set fieldSep to ASCII character 31
         set rowSep to ASCII character 30
-        tell application "\(browser.name)"
+        tell application id "\(browser.bundleID)"
             set output to ""
             try
                 set winCount to count of windows
@@ -207,11 +239,18 @@ final class BrowserTabService {
     /// Activates a specific browser tab via AppleScript.
     @discardableResult
     static func activate(tab: BrowserTabInfo) -> Bool {
+        let targetExpr: String
+        if let bundleID = shared.browsers.first(where: { $0.name == tab.browserName })?.bundleID {
+            targetExpr = "application id \"\(bundleID)\""
+        } else {
+            targetExpr = "application \"\(tab.browserName)\""
+        }
+
         let scriptSource: String
         switch tab.browserName {
         case "Safari":
             scriptSource = """
-            tell application "Safari"
+            tell \(targetExpr)
                 activate
                 set index of window \(tab.winIndex) to 1
                 set current tab of window 1 to tab \(tab.tabIndex) of window 1
@@ -219,7 +258,7 @@ final class BrowserTabService {
             """
         case "Arc":
             scriptSource = """
-            tell application "Arc"
+            tell \(targetExpr)
                 activate
                 tell window \(tab.winIndex)
                     tell tab \(tab.tabIndex)
@@ -230,7 +269,7 @@ final class BrowserTabService {
             """
         default: // Chromium browsers: Chrome, Edge, Brave
             scriptSource = """
-            tell application "\(tab.browserName)"
+            tell \(targetExpr)
                 activate
                 set index of window \(tab.winIndex) to 1
                 set active tab index of window 1 to \(tab.tabIndex)

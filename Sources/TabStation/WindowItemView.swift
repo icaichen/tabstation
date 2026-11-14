@@ -220,6 +220,7 @@ final class WindowItemView: NSView {
 
     var onActivate: (() -> Void)?
     var onHover: ((WindowItemView) -> Void)?
+    var canActivateHover: (() -> Bool)?
     var onClose: (() -> Void)?
     var onSnapLeft: (() -> Void)?
     var onSnapRight: (() -> Void)?
@@ -630,6 +631,7 @@ final class WindowItemView: NSView {
     }
 
     override func mouseEntered(with event: NSEvent) {
+        guard canActivateHover?() ?? true else { return }
         if FeaturePreferences.hoverActionPillsEnabled {
             pillBar.isHidden = false
             NSAnimationContext.runAnimationGroup { ctx in
@@ -646,6 +648,11 @@ final class WindowItemView: NSView {
     }
 
     override func mouseMoved(with event: NSEvent) {
+        guard canActivateHover?() ?? true else { return }
+        if FeaturePreferences.hoverActionPillsEnabled && pillBar.isHidden {
+            pillBar.isHidden = false
+            pillBar.alphaValue = 1.0
+        }
         guard !isSelected else { return }
         onHover?(self)
     }

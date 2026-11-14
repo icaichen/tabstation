@@ -31,8 +31,8 @@ final class SwitcherController {
     private let dwellPrewarmDelay: TimeInterval = 0.12
     private let dwellShowDelay: TimeInterval = 0.36
 
-    /// Upper bound on thumbnails fetched per presentation.
-    private let maxConcurrentCaptures = 4
+    /// Bounded concurrency for ScreenCaptureKit thumbnail capture pool.
+    private let maxConcurrentCaptures = 6
 
     init() {
         panel.contentView = view
@@ -323,6 +323,7 @@ final class SwitcherController {
         let screen = screenUnderCursor()
         selectedIndex = min(max(0, initialSelection), max(0, visibleWindows.count - 1))
 
+        view.armMouseHoverGuard()
         panel.applyAppearancePreferences()
         configureView(on: screen)
 
@@ -742,6 +743,7 @@ final class SwitcherController {
             transientBrowserTabs = cached
             applyFilter()
             let screen = screenUnderCursor()
+            view.armMouseHoverGuard()
             configureView(on: screen)
             layoutPanel(on: screen)
             selectedIndex = 0
@@ -854,35 +856,48 @@ final class SwitcherController {
         generation += 1
         let gen = generation
         let metrics = view.thumbnailMetrics
-        var targets: [(id: CGWindowID, size: CGSize)] = []
-        for window in visibleWindows {
-            if window.browserTab != nil {
-                view.applyThumbnail(nil, toWindowID: window.id)
+        var targets: [(index: Int, id: CGWindowID, size: CGSize)] = []
+        for (index, window) in visibleWindows.enumerated() {
+            if window.browserTab != nil || window.id == 0 {
+                view.applyThumbnail(nil, at: index, windowID: window.id)
                 continue
             }
             let width = min(metrics.maxWidth, max(metrics.minWidth, (metrics.height * window.aspectRatio).rounded()))
             // 2x so thumbnails stay crisp on Retina displays.
             let size = CGSize(width: width * 2, height: metrics.height * 2)
-            targets.append((id: window.id, size: size))
+            targets.append((index: index, id: window.id, size: size))
         }
         guard !targets.isEmpty else { return }
 
+        let maxConc = maxConcurrentCaptures
         Task { [weak self] in
             guard let self else { return }
             let service = ThumbnailService.shared
 
-            for chunk in targets.chunked(into: maxConcurrentCaptures) {
-                guard gen == generation else { return }
-                await withTaskGroup(of: (CGWindowID, NSImage?).self) { group in
-                    for target in chunk {
+            await withTaskGroup(of: (Int, CGWindowID, NSImage?).self) { group in
+                var nextIdx = 0
+                let initialCount = min(maxConc, targets.count)
+                while nextIdx < initialCount {
+                    let target = targets[nextIdx]
+                    nextIdx += 1
+                    group.addTask {
+                        let image = await service.thumbnail(windowID: target.id, pixelSize: target.size)
+                        return (target.index, target.id, image.map { NSImage(cgImage: $0, size: .zero) })
+                    }
+                }
+
+                for await (cellIdx, id, image) in group {
+                    guard gen == self.generation else { return }
+                    await MainActor.run {
+                        self.view.applyThumbnail(image, at: cellIdx, windowID: id)
+                    }
+                    if nextIdx < targets.count {
+                        let target = targets[nextIdx]
+                        nextIdx += 1
                         group.addTask {
                             let image = await service.thumbnail(windowID: target.id, pixelSize: target.size)
-                            return (target.id, image.map { NSImage(cgImage: $0, size: .zero) })
+                            return (target.index, target.id, image.map { NSImage(cgImage: $0, size: .zero) })
                         }
-                    }
-                    for await (id, image) in group {
-                        guard gen == self.generation else { return }
-                        await MainActor.run { self.view.applyThumbnail(image, toWindowID: id) }
                     }
                 }
             }

@@ -172,8 +172,8 @@ final class WindowListCache: @unchecked Sendable {
         }
 
         var browserTabs = existingTabs
-        if FeaturePreferences.includeBrowserTabsByDefault || FeaturePreferences.browserTabsShortcutEnabled {
-            if runSlowIPC || browserTabs.isEmpty {
+        if FeaturePreferences.includeBrowserTabsByDefault {
+            if runSlowIPC {
                 browserTabs = BrowserTabService.shared.fetchTabs()
             }
         } else {

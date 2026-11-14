@@ -20,8 +20,10 @@ actor ThumbnailService {
     private var fetchedAt: Date?
     private var windowsByID: [CGWindowID: SCWindow] = [:]
     private var thumbnailCache: [CacheKey: (image: CGImage, aspectRatio: CGFloat, timestamp: TimeInterval)] = [:]
-    private let cacheTTL: TimeInterval = 4.0
-    private let ttl: TimeInterval = 2.0
+    private var staleCache: [CGWindowID: CGImage] = [:]
+    private var inFlightRefresh: Task<Bool, Never>?
+    private let cacheTTL: TimeInterval = 6.0
+    private let ttl: TimeInterval = 2.5
 
     nonisolated var permissionGranted: Bool {
         CGPreflightScreenCaptureAccess()
@@ -30,30 +32,47 @@ actor ThumbnailService {
     var lastCaptureSucceeded: Bool { content != nil }
 
     @discardableResult
-    func refresh() async -> Bool {
-        if let fetchedAt, Date().timeIntervalSince(fetchedAt) < ttl {
+    func refresh(force: Bool = false) async -> Bool {
+        if !force, let fetchedAt, Date().timeIntervalSince(fetchedAt) < ttl, content != nil {
             return true
         }
-        do {
-            let content = try await SCShareableContent.excludingDesktopWindows(
-                false,
-                onScreenWindowsOnly: false
-            )
-            var map: [CGWindowID: SCWindow] = [:]
-            map.reserveCapacity(content.windows.count)
-            for window in content.windows where window.windowLayer == 0 {
-                map[window.windowID] = window
+        if let existing = inFlightRefresh {
+            return await existing.value
+        }
+        let task = Task<Bool, Never> {
+            do {
+                let freshContent = try await SCShareableContent.excludingDesktopWindows(
+                    false,
+                    onScreenWindowsOnly: false
+                )
+                var map: [CGWindowID: SCWindow] = [:]
+                map.reserveCapacity(freshContent.windows.count)
+                for window in freshContent.windows where window.windowLayer == 0 {
+                    map[window.windowID] = window
+                }
+                self.setRefreshedContent(freshContent, map: map)
+                return true
+            } catch {
+                self.clearRefreshedContent()
+                return false
             }
-            self.content = content
-            self.windowsByID = map
-            self.fetchedAt = Date()
-            return true
-        } catch {
-            self.content = nil
-            self.windowsByID = [:]
-            self.fetchedAt = nil
-            return false
         }
+        inFlightRefresh = task
+        let result = await task.value
+        inFlightRefresh = nil
+        return result
+    }
+
+    private func setRefreshedContent(_ freshContent: SCShareableContent, map: [CGWindowID: SCWindow]) {
+        self.content = freshContent
+        self.windowsByID = map
+        self.fetchedAt = Date()
+    }
+
+    private func clearRefreshedContent() {
+        self.content = nil
+        self.windowsByID = [:]
+        self.fetchedAt = nil
     }
 
     /// Resolves the live ScreenCaptureKit window handle for a `WindowInfo`.
@@ -73,6 +92,17 @@ actor ThumbnailService {
         }
     }
 
+    /// Fast cache-only lookup for instant warm rendering when opening the switcher.
+    func cachedThumbnail(windowID: CGWindowID, tier: ResolutionTier = .thumbnail) -> CGImage? {
+        guard windowID > 0 else { return nil }
+        let now = ProcessInfo.processInfo.systemUptime
+        let key = CacheKey(windowID: windowID, tier: tier)
+        if let cached = thumbnailCache[key], now - cached.timestamp < cacheTTL {
+            return cached.image
+        }
+        return nil
+    }
+
     /// Captures one window fitting within `pixelSize`, strictly preserving the
     /// window's real ScreenCaptureKit aspect ratio to prevent black letterbox bars.
     func thumbnail(
@@ -87,8 +117,12 @@ actor ThumbnailService {
             return cached.image
         }
 
-        guard await refresh() else { return nil }
-        guard let window = windowsByID[windowID] else { return nil }
+        guard await refresh() else { return staleCache[windowID] }
+        if windowsByID[windowID] == nil,
+           let fetchedAt, Date().timeIntervalSince(fetchedAt) > 0.25 {
+            _ = await refresh(force: true)
+        }
+        guard let window = windowsByID[windowID] else { return staleCache[windowID] }
 
         let fitted = aspectFittedPixelSize(windowFrame: window.frame, maxSize: pixelSize)
         let filter = SCContentFilter(desktopIndependentWindow: window)
@@ -98,16 +132,49 @@ actor ThumbnailService {
         config.showsCursor = false
         config.scalesToFit = true
 
-        let image: CGImage? = await withCheckedContinuation { continuation in
-            SCScreenshotManager.captureImage(contentFilter: filter, configuration: config) { image, _ in
-                continuation.resume(returning: image)
-            }
-        }
+        let image = await captureImageWithTimeout(filter: filter, configuration: config, timeoutNanoseconds: 1_500_000_000)
         if let image {
             let ratio = window.frame.height > 0 ? (window.frame.width / window.frame.height) : 1.6
             thumbnailCache[key] = (image, ratio, now)
+            staleCache[windowID] = image
+            return image
         }
-        return image
+        return staleCache[windowID]
+    }
+
+    private nonisolated func captureImageWithTimeout(
+        filter: SCContentFilter,
+        configuration: SCStreamConfiguration,
+        timeoutNanoseconds: UInt64
+    ) async -> CGImage? {
+        final class OnceGate: @unchecked Sendable {
+            private let lock = NSLock()
+            private var finished = false
+            func tryEnter() -> Bool {
+                lock.lock()
+                defer { lock.unlock() }
+                guard !finished else { return false }
+                finished = true
+                return true
+            }
+        }
+
+        return await withCheckedContinuation { continuation in
+            let gate = OnceGate()
+            SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration) { image, _ in
+                if gate.tryEnter() {
+                    continuation.resume(returning: image)
+                }
+            }
+
+            DispatchQueue.global(qos: .userInitiated).asyncAfter(
+                deadline: .now() + .nanoseconds(Int(timeoutNanoseconds))
+            ) {
+                if gate.tryEnter() {
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
     }
 
     /// Computes exact integer pixel bounds matching `windowFrame`'s native aspect ratio.
