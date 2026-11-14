@@ -73,6 +73,7 @@ final class UpdateManager: NSObject, URLSessionDownloadDelegate {
 
     static let latestReleaseAPI = URL(string: "https://api.github.com/repos/icaichen/tabstation/releases/latest")!
     static let releasesPageURL = URL(string: "https://github.com/icaichen/tabstation/releases/latest")!
+    static let websiteURL = URL(string: "https://altdeck-two.vercel.app/")!
     private static let autoCheckInterval: TimeInterval = 12 * 3600
 
     enum State: Equatable {

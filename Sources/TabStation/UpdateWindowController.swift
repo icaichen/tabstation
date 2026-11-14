@@ -20,7 +20,7 @@ final class UpdateWindowController: NSWindowController {
     convenience init() {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 500, height: 356),
-            styleMask: [.titled, .closable],
+            styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
         )
@@ -51,6 +51,9 @@ final class UpdateWindowController: NSWindowController {
         buildUI()
         applyState()
         NSApp.activate(ignoringOtherApps: true)
+        if window?.isMiniaturized == true {
+            window?.deminiaturize(nil)
+        }
         window?.center()
         showWindow(nil)
         window?.makeKeyAndOrderFront(nil)

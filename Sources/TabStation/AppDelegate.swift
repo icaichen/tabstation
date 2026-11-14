@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         migrateLegacyDefaultsIfNeeded()
         Theme.configure()
 
+        installMainMenu()
         installStatusItem()
         installHotKeys()
         setupPreferencesHandlers()
@@ -115,6 +116,54 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.refreshStatusItemUpdateBadge()
         }
         refreshStatusItemUpdateBadge()
+    }
+
+    /// Standard invisible menu bar shortcuts (⌘W close, ⌘M minimize, ⌘C/V/A edit, ⌘, settings, ⌘Q quit)
+    /// for accessory windows like Settings, Software Update, and Onboarding.
+    func installMainMenu() {
+        let mainMenu = NSMenu()
+
+        let appItem = NSMenuItem()
+        let appMenu = NSMenu()
+        let prefsItem = NSMenuItem(
+            title: L10n.t("Preferences…", "设置…"),
+            action: #selector(showPreferences),
+            keyEquivalent: ","
+        )
+        prefsItem.target = self
+        appMenu.addItem(prefsItem)
+        appMenu.addItem(.separator())
+        let quitItem = NSMenuItem(
+            title: L10n.t("Quit AltDeck", "退出 AltDeck"),
+            action: #selector(NSApplication.terminate(_:)),
+            keyEquivalent: "q"
+        )
+        appMenu.addItem(quitItem)
+        appItem.submenu = appMenu
+        mainMenu.addItem(appItem)
+
+        let fileItem = NSMenuItem()
+        let fileMenu = NSMenu(title: "File")
+        fileMenu.addItem(withTitle: L10n.t("Close Window", "关闭窗口"), action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        fileItem.submenu = fileMenu
+        mainMenu.addItem(fileItem)
+
+        let editItem = NSMenuItem()
+        let editMenu = NSMenu(title: "Edit")
+        editMenu.addItem(withTitle: L10n.t("Cut", "剪切"), action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        editMenu.addItem(withTitle: L10n.t("Copy", "拷贝"), action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        editMenu.addItem(withTitle: L10n.t("Paste", "粘贴"), action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        editMenu.addItem(withTitle: L10n.t("Select All", "全选"), action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        editItem.submenu = editMenu
+        mainMenu.addItem(editItem)
+
+        let windowItem = NSMenuItem()
+        let windowMenu = NSMenu(title: "Window")
+        windowMenu.addItem(withTitle: L10n.t("Minimize", "最小化"), action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
+        windowItem.submenu = windowMenu
+        mainMenu.addItem(windowItem)
+
+        NSApp.mainMenu = mainMenu
     }
 
     /// Vector template silhouette matching AltDeck's stacked-window-cards logo (18x18pt, Dark/Light menu bar adaptive).
@@ -290,6 +339,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func openAvailableUpdate() {
         UpdateManager.shared.presentUpdateWindow()
+    }
+
+    @objc private func openWebsite() {
+        NSWorkspace.shared.open(UpdateManager.websiteURL)
     }
 
     @objc private func quit() {
@@ -480,6 +533,14 @@ extension AppDelegate: NSMenuDelegate {
         )
         checkUpdates.target = self
         menu.addItem(checkUpdates)
+
+        let websiteItem = NSMenuItem(
+            title: L10n.t("Official Website…", "访问官网…"),
+            action: #selector(openWebsite),
+            keyEquivalent: ""
+        )
+        websiteItem.target = self
+        menu.addItem(websiteItem)
 
         let prefs = NSMenuItem(title: L10n.t("Preferences…", "设置…"), action: #selector(showPreferences), keyEquivalent: ",")
         prefs.target = self

@@ -276,7 +276,7 @@ final class PreferencesWindowController: NSWindowController {
     convenience init() {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 580, height: 560),
-            styleMask: [.titled, .closable],
+            styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
         )
@@ -302,6 +302,9 @@ final class PreferencesWindowController: NSWindowController {
     func show() {
         reload()
         NSApp.activate(ignoringOtherApps: true)
+        if window?.isMiniaturized == true {
+            window?.deminiaturize(nil)
+        }
         window?.center()
         showWindow(nil)
         window?.makeKeyAndOrderFront(nil)
@@ -967,10 +970,19 @@ final class PreferencesWindowController: NSWindowController {
         checkUpdatesButton.controlSize = .small
         checkUpdatesButton.setContentHuggingPriority(.required, for: .horizontal)
 
-        let row = NSStackView(views: [textStack, updateStatusLabel, checkUpdatesButton])
+        let websiteButton = NSButton(
+            title: L10n.t("Website…", "官网…"),
+            target: self,
+            action: #selector(openWebsiteClicked)
+        )
+        websiteButton.bezelStyle = .rounded
+        websiteButton.controlSize = .small
+        websiteButton.setContentHuggingPriority(.required, for: .horizontal)
+
+        let row = NSStackView(views: [textStack, updateStatusLabel, websiteButton, checkUpdatesButton])
         row.orientation = .horizontal
         row.alignment = .centerY
-        row.spacing = 10
+        row.spacing = 8
         return row
     }
 
@@ -1336,5 +1348,9 @@ final class PreferencesWindowController: NSWindowController {
 
     @objc private func done() {
         window?.close()
+    }
+
+    @objc private func openWebsiteClicked() {
+        NSWorkspace.shared.open(UpdateManager.websiteURL)
     }
 }
