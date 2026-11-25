@@ -4,6 +4,25 @@ import ApplicationServices
 /// Handles moving windows across multiple physical or virtual displays.
 enum DisplayDispatcher {
 
+    private static func liveBounds(for axWindow: AXUIElement, fallback: CGRect) -> CGRect {
+        var posVal: CFTypeRef?
+        var sizeVal: CFTypeRef?
+        var pos = fallback.origin
+        var size = fallback.size
+
+        if AXUIElementCopyAttributeValue(axWindow, kAXPositionAttribute as CFString, &posVal) == .success,
+           let posVal, CFGetTypeID(posVal) == AXValueGetTypeID() {
+            AXValueGetValue(posVal as! AXValue, .cgPoint, &pos)
+        }
+        if AXUIElementCopyAttributeValue(axWindow, kAXSizeAttribute as CFString, &sizeVal) == .success,
+           let sizeVal, CFGetTypeID(sizeVal) == AXValueGetTypeID() {
+            AXValueGetValue(sizeVal as! AXValue, .cgSize, &size)
+        }
+
+        guard size.width >= 50, size.height >= 50 else { return fallback }
+        return CGRect(origin: pos, size: size)
+    }
+
     /// Moves the specified window to the next screen in rotation.
     /// Returns a human-readable status message for user feedback.
     @discardableResult
@@ -13,11 +32,19 @@ enum DisplayDispatcher {
             return L10n.t("Single display detected", "仅检测到单个显示器")
         }
 
+        guard let axWindow = WindowActivator.findAXWindow(in: window) else {
+            return L10n.t("Cannot access window via Accessibility", "无法通过辅助功能访问该窗口")
+        }
+
+        // Always read live bounds from AX so repeated presses of `D` cycle through displays
+        // instead of reusing the stale snapshot bounds from when the switcher opened.
+        let currentBounds = liveBounds(for: axWindow, fallback: window.bounds)
+
         // Primary screen height is needed to convert Cocoa (bottom-left) to Quartz (top-left)
         let primaryHeight = screens.first?.frame.height ?? 0
 
         // Window center in Quartz coordinates
-        let winCenter = CGPoint(x: window.bounds.midX, y: window.bounds.midY)
+        let winCenter = CGPoint(x: currentBounds.midX, y: currentBounds.midY)
 
         // Convert all screen bounds to Quartz coordinates
         let screenQuartzFrames = screens.map { s -> CGRect in
@@ -53,26 +80,31 @@ enum DisplayDispatcher {
         let currentVis = screenQuartzVisibleFrames[currentScreenIndex]
         let targetVis = screenQuartzVisibleFrames[targetScreenIndex]
 
-        // Proportional relative offset and dimensions
-        let relX = max(0, min(1, (window.bounds.origin.x - currentVis.origin.x) / max(1, currentVis.width)))
-        let relY = max(0, min(1, (window.bounds.origin.y - currentVis.origin.y) / max(1, currentVis.height)))
-        let relW = max(0.2, min(1.0, window.bounds.width / max(1, currentVis.width)))
-        let relH = max(0.2, min(1.0, window.bounds.height / max(1, currentVis.height)))
+        let isMaximized = (currentBounds.width >= currentVis.width - 30) && (currentBounds.height >= currentVis.height - 30)
 
-        var newW = (targetVis.width * relW).rounded()
-        var newH = (targetVis.height * relH).rounded()
-        newW = max(320, min(targetVis.width, newW))
-        newH = max(240, min(targetVis.height, newH))
+        let newW: CGFloat
+        let newH: CGFloat
+        let newX: CGFloat
+        let newY: CGFloat
 
-        var newX = targetVis.origin.x + (targetVis.width * relX).rounded()
-        var newY = targetVis.origin.y + (targetVis.height * relY).rounded()
+        if isMaximized {
+            newW = targetVis.width
+            newH = targetVis.height
+            newX = targetVis.origin.x
+            newY = targetVis.origin.y
+        } else {
+            let relX = max(0, min(1, (currentBounds.origin.x - currentVis.origin.x) / max(1, currentVis.width)))
+            let relY = max(0, min(1, (currentBounds.origin.y - currentVis.origin.y) / max(1, currentVis.height)))
 
-        // Clamp to stay fully within target visible area
-        newX = max(targetVis.origin.x, min(targetVis.origin.x + targetVis.width - newW, newX))
-        newY = max(targetVis.origin.y, min(targetVis.origin.y + targetVis.height - newH, newY))
+            // Preserve original window dimensions unless the target display is smaller
+            newW = max(320, min(targetVis.width, currentBounds.width)).rounded()
+            newH = max(240, min(targetVis.height, currentBounds.height)).rounded()
 
-        guard let axWindow = WindowActivator.findAXWindow(in: window) else {
-            return L10n.t("Cannot access window via Accessibility", "无法通过辅助功能访问该窗口")
+            let calcX = targetVis.origin.x + (targetVis.width - newW) * relX
+            let calcY = targetVis.origin.y + (targetVis.height - newH) * relY
+
+            newX = max(targetVis.origin.x, min(targetVis.origin.x + targetVis.width - newW, calcX)).rounded()
+            newY = max(targetVis.origin.y, min(targetVis.origin.y + targetVis.height - newH, calcY)).rounded()
         }
 
         var targetPos = CGPoint(x: newX, y: newY)
@@ -83,6 +115,9 @@ enum DisplayDispatcher {
         }
         if let sizeVal = AXValueCreate(.cgSize, &targetSize) {
             AXUIElementSetAttributeValue(axWindow, kAXSizeAttribute as CFString, sizeVal)
+        }
+        if let posVal = AXValueCreate(.cgPoint, &targetPos) {
+            AXUIElementSetAttributeValue(axWindow, kAXPositionAttribute as CFString, posVal)
         }
 
         AXUIElementPerformAction(axWindow, kAXRaiseAction as CFString)

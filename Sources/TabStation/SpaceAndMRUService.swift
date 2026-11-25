@@ -104,20 +104,29 @@ final class MRUTracker: @unchecked Sendable {
     private let lock = NSLock()
     private var sequence: UInt64 = 0
     private var windowRanks: [CGWindowID: UInt64] = [:]
+    private var appRanks: [pid_t: UInt64] = [:]
 
     private init() {}
 
-    func recordFocus(windowID: CGWindowID) {
-        guard windowID > 0 else { return }
+    func recordFocus(windowID: CGWindowID, pid: pid_t = 0) {
+        guard windowID > 0 || pid > 0 else { return }
         lock.lock()
         sequence += 1
-        windowRanks[windowID] = sequence
+        if windowID > 0 {
+            windowRanks[windowID] = sequence
+        }
+        if pid > 0 {
+            appRanks[pid] = sequence
+        }
         lock.unlock()
     }
 
-    /// Queries only the newly activated frontmost app (1 lightweight AX call) when macOS switches apps.
+    /// Records app activation immediately, then queries the newly activated frontmost app's
+    /// focused window (1 lightweight AX call) so window-level MRU stays accurate.
     func recordFrontmostAppWindow(pid: pid_t) {
-        guard pid > 0, Permissions.accessibilityGranted else { return }
+        guard pid > 0 else { return }
+        recordFocus(windowID: 0, pid: pid)
+        guard Permissions.accessibilityGranted else { return }
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let axApp = AXUIElementCreateApplication(pid)
             var focusedVal: CFTypeRef?
@@ -125,7 +134,7 @@ final class MRUTracker: @unchecked Sendable {
                   let focusedElem = focusedVal else { return }
             var wid: CGWindowID = 0
             if _AXUIElementGetWindow(focusedElem as! AXUIElement, &wid) == .success, wid > 0 {
-                self?.recordFocus(windowID: wid)
+                self?.recordFocus(windowID: wid, pid: pid)
             }
         }
     }
@@ -134,6 +143,12 @@ final class MRUTracker: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         return windowRanks[windowID] ?? 0
+    }
+
+    func appRank(for pid: pid_t) -> UInt64 {
+        lock.lock()
+        defer { lock.unlock() }
+        return appRanks[pid] ?? 0
     }
 }
 

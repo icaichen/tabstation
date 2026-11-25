@@ -9,7 +9,7 @@
   const ZH_MAP = {
     // <title> & Navbar
     "AltDeck — Fast Native macOS Window Switcher & Alt-Tab Alternative": "AltDeck — 极速原生 macOS 窗口切换器与 AltTab 替代品",
-    "v1.0.1 Open Source": "v1.0.1 开源版",
+    "v1.0.2 Open Source": "v1.0.2 开源版",
     "Why AltDeck": "为什么选择",
     "Interactive Demo": "在线交互演示",
     "Comparison": "功能对比",
@@ -24,7 +24,7 @@
     "Free & Open Source (MIT)": "永久免费开源 (MIT)",
     "The window switcher macOS was destined to have.": "macOS 本该如此的窗口切换体验。",
     "Apple’s ⌘Tab was conceived in 1984 for whole applications. Today, our real work spans dozens of windows, tabs, and displays. AltDeck brings native Liquid Glass aesthetics, sub-millisecond responsiveness, natural hold-to-preview, browser tab jumping, and modular window tiling into one clean, tactile gesture.": "苹果的 ⌘Tab 诞生于 1984 年，只以“应用”为单位切换。但今天的工作同时跨越数十个窗口、浏览器标签和外接屏幕。AltDeck 将原生液态玻璃美学、亚毫秒级响应、自然悬停预览、浏览器标签直达与模块化窗口分屏，融于一个利落的指尖手势。",
-    "View on GitHub (v1.0.1)": "查看 GitHub (v1.0.1)",
+    "View on GitHub (v1.0.2)": "查看 GitHub (v1.0.2)",
     "Try Interactive Sandbox": "体验交互沙盒",
     "macOS 14+ (Native Liquid Glass on macOS 26+)": "支持 macOS 14+（macOS 26+ 原生液态玻璃）",
     "Apple Silicon & SwiftPM Open Source": "支持 Apple Silicon 与 SwiftPM 源码构建",
@@ -326,9 +326,9 @@
     // Download CTA & Footer
     "Upgrade your macOS multitasking today.": "今天就开始升级你的 macOS 切屏效率。",
     "Free, open source, and built with love for power users. No subscriptions, no telemetry, no compromises.": "永久免费、MIT 开源、为真正重度工作流而生——零订阅、零追踪、零妥协。",
-    "Download AltDeck v1.0.1": "免费下载 AltDeck v1.0.1",
+    "Download AltDeck v1.0.2": "免费下载 AltDeck v1.0.2",
     "Copy Build Command": "复制源码构建命令",
-    "Version 1.0.1": "版本 1.0.1",
+    "Version 1.0.2": "版本 1.0.2",
     "~1.5 MB App": "体积约 1.5 MB",
     "MIT Open Source": "MIT 开源",
     "macOS 14+ (Liquid Glass on 26+)": "macOS 14+（26+ 支持液态玻璃）",

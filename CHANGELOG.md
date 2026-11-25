@@ -2,6 +2,16 @@
 
 All notable changes to **AltDeck** will be documented in this file.
 
+## [v1.0.2] — 2026-11-25
+
+### What's New & Fixed / 更新内容与修复
+- **True MRU Window Ordering / 真正的最近使用（MRU）窗口排序**: Replaced app-grouped Z-order sorting with true Most Recently Used window + app ordering so index 1 is always the exact previous window you were on, even when the current app has multiple windows.
+- **Instant Quick `⌘Tab` Switching / 快速 `⌘Tab` 秒切上一个窗口**: Immediately commits when the hold modifier is already released on fast tap-and-release gestures instead of waiting for polling.
+- **Multi-Monitor Window Moving (`D`) & Size Preservation / 多显示器循环切屏与尺寸保持**:
+  - `D` now reads live window bounds via Accessibility on every press so pressing `D` repeatedly cycles smoothly across all connected displays.
+  - Preserves original window width and height when moving between displays of different resolutions (clamping only when the target display is smaller).
+- **Reliable In-Switcher Shortcuts After Sleep/Wake / 休眠唤醒后快捷键自动恢复**: Added `CGEventTap` self-healing (`ensureTapActive()`) on switcher open and system wake so `P`, `D`, `S`, `W`, `M`, `Space`, and arrow keys stay responsive.
+
 ## [v1.0.1] — 2026-11-14
 
 ### What's New & Fixed / 更新内容与修复

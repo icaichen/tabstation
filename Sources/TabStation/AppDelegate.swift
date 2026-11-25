@@ -81,6 +81,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 _ = self.interceptor.install()
             }
         }
+
+        // Re-enable CGEventTap after macOS sleep/wake if WindowServer disabled it.
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.interceptor.ensureTapActive()
+        }
     }
 
     // MARK: - Permissions

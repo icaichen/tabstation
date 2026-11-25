@@ -341,18 +341,49 @@ final class HotKeyInterceptor {
         activeRole = role
         activeHoldModifier = holdMod
         holdModifierHeld = true
-        startModifierReleasePolling()
         dispatch(key)
+
+        // If the user tapped and released the modifier so fast that it's already up
+        // when the Carbon HotKey fires, commit immediately instead of waiting for polling.
+        if !isHoldModifierPressed(holdMod) {
+            stopModifierReleasePolling()
+            activeRole = .none
+            activeHoldModifier = []
+            holdModifierHeld = false
+            dispatchCommit()
+        } else {
+            startModifierReleasePolling()
+        }
+    }
+
+    private func isHoldModifierPressed(_ holdMod: NSEvent.ModifierFlags) -> Bool {
+        let state = CGEventSource.flagsState(.combinedSessionState)
+        if holdMod.contains(.command) { return state.contains(.maskCommand) }
+        if holdMod.contains(.option) { return state.contains(.maskAlternate) }
+        if holdMod.contains(.control) { return state.contains(.maskControl) }
+        return state.contains(.maskCommand) || state.contains(.maskAlternate) || state.contains(.maskControl)
     }
 
     // MARK: - Switcher lifecycle callbacks
 
     func switcherDidOpen(with role: ActiveShortcutRole) {
+        ensureTapActive()
         activeRole = role
         activeHoldModifier = holdModifierForRole(role)
         holdModifierHeld = true
         isSwitcherVisible = true
         startModifierReleasePolling()
+    }
+
+    /// Re-enables or re-installs the CGEventTap if macOS disabled it (e.g. after sleep/wake or timeout).
+    func ensureTapActive() {
+        if let tap {
+            if !CGEvent.tapIsEnabled(tap: tap) {
+                CGEvent.tapEnable(tap: tap, enable: true)
+            }
+        } else if Permissions.accessibilityGranted {
+            _ = install()
+        }
     }
 
     func switcherDidClose() {

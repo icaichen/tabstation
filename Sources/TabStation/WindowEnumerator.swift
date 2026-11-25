@@ -115,8 +115,8 @@ final class WindowListCache: @unchecked Sendable {
         if age < 3.0, let cached = cachedSnapshot, !cached.isEmpty {
             var snap = cached
             lock.unlock()
-            if frontPID != 0, let firstPID = snap.windows.first?.pid, firstPID != frontPID {
-                snap.windows = WindowEnumerator.reorderWindows(snap.windows, frontPID: frontPID)
+            if frontPID != 0 {
+                snap.windows = WindowEnumerator.reorderWindowsByMRU(snap.windows, frontPID: frontPID)
             }
             if age > 0.35 {
                 invalidateAndPrewarm()
@@ -378,7 +378,7 @@ enum WindowEnumerator {
             ))
         }
 
-        snapshot.windows = groupByApp(frontToBack, frontPID: frontPID, allowFrontAXQuery: allowFrontAXQuery)
+        snapshot.windows = sortByMRU(frontToBack, frontPID: frontPID, allowFrontAXQuery: allowFrontAXQuery)
         return snapshot
     }
 
@@ -437,45 +437,98 @@ enum WindowEnumerator {
         return result
     }
 
-    static func reorderWindows(_ windows: [WindowInfo], frontPID: pid_t) -> [WindowInfo] {
-        guard frontPID != 0 else { return windows }
-        let frontWindows = windows.filter { $0.pid == frontPID }
-        guard !frontWindows.isEmpty else { return windows }
-        let otherWindows = windows.filter { $0.pid != frontPID }
-        return frontWindows + otherWindows
+    static func reorderWindowsByMRU(_ windows: [WindowInfo], frontPID: pid_t) -> [WindowInfo] {
+        return sortByMRU(windows, frontPID: frontPID, allowFrontAXQuery: false)
     }
 
-    private static func groupByApp(_ list: [WindowInfo], frontPID: pid_t, allowFrontAXQuery: Bool) -> [WindowInfo] {
-        var order: [pid_t] = []
-        var buckets: [pid_t: [WindowInfo]] = [:]
-        for window in list {
-            if buckets[window.pid] == nil {
-                order.append(window.pid)
-                buckets[window.pid] = []
+    /// Orders windows by true Most Recently Used (MRU) order:
+    /// index 0 = currently focused window, index 1 = exact previous window, etc.
+    /// Falls back to WindowServer front-to-back Z-order for windows not yet seen by MRUTracker.
+    private static func sortByMRU(_ list: [WindowInfo], frontPID: pid_t, allowFrontAXQuery: Bool) -> [WindowInfo] {
+        var regular: [(idx: Int, win: WindowInfo)] = []
+        var browserTabs: [WindowInfo] = []
+        var deferred: [(idx: Int, win: WindowInfo)] = []
+
+        for (i, w) in list.enumerated() {
+            if w.browserTab != nil {
+                browserTabs.append(w)
+            } else if w.isMinimized || w.id == 0 {
+                deferred.append((i, w))
+            } else {
+                regular.append((i, w))
             }
-            buckets[window.pid]?.append(window)
         }
 
-        if frontPID != 0, let idx = order.firstIndex(of: frontPID), idx > 0 {
-            order.remove(at: idx)
-            order.insert(frontPID, at: 0)
+        // Identify the single currently focused window of `frontPID` so it stays at index 0.
+        var frontFocusedID: CGWindowID?
+        if frontPID != 0 {
+            let frontCandidates = regular.filter { $0.win.pid == frontPID }.map(\.win)
+            if allowFrontAXQuery && frontCandidates.count > 1 {
+                frontFocusedID = sortWindowsByAXOrder(pid: frontPID, windows: frontCandidates).first?.id
+            } else if let bestTracked = frontCandidates.max(by: {
+                MRUTracker.shared.rank(for: $0.id) < MRUTracker.shared.rank(for: $1.id)
+            }), MRUTracker.shared.rank(for: bestTracked.id) > 0 {
+                frontFocusedID = bestTracked.id
+            } else {
+                frontFocusedID = frontCandidates.first?.id
+            }
         }
 
-        return order.flatMap { pid in
-            let windows = buckets[pid] ?? []
-            if allowFrontAXQuery && pid == frontPID && windows.count > 1 {
-                return sortWindowsByAXOrder(pid: pid, windows: windows)
-            }
-            if windows.count > 1 {
-                return windows.sorted { w1, w2 in
-                    let r1 = MRUTracker.shared.rank(for: w1.id)
-                    let r2 = MRUTracker.shared.rank(for: w2.id)
-                    if r1 != r2 { return r1 > r2 }
-                    return false
-                }
-            }
-            return windows
+        let sortedRegular = regular.sorted { a, b in
+            let aIsFront = (a.win.id == frontFocusedID)
+            let bIsFront = (b.win.id == frontFocusedID)
+            if aIsFront != bIsFront { return aIsFront }
+
+            let ra = MRUTracker.shared.rank(for: a.win.id)
+            let rb = MRUTracker.shared.rank(for: b.win.id)
+            if ra != rb { return ra > rb }
+
+            let aa = MRUTracker.shared.appRank(for: a.win.pid)
+            let ab = MRUTracker.shared.appRank(for: b.win.pid)
+            if aa != ab { return aa > ab }
+
+            return a.idx < b.idx
+        }.map(\.win)
+
+        let sortedDeferred = deferred.sorted { a, b in
+            let ra = MRUTracker.shared.rank(for: a.win.id)
+            let rb = MRUTracker.shared.rank(for: b.win.id)
+            if ra != rb { return ra > rb }
+
+            let aa = MRUTracker.shared.appRank(for: a.win.pid)
+            let ab = MRUTracker.shared.appRank(for: b.win.pid)
+            if aa != ab { return aa > ab }
+
+            return a.idx < b.idx
+        }.map(\.win)
+
+        if browserTabs.isEmpty {
+            return sortedRegular + sortedDeferred
         }
+
+        // Attach browser tabs right after their parent browser window without displacing MRU window order.
+        var tabsByWindowID: [CGWindowID: [WindowInfo]] = [:]
+        var orphanTabs: [WindowInfo] = []
+        let regularIDs = Set(sortedRegular.map(\.id))
+        for tab in browserTabs {
+            if regularIDs.contains(tab.id) {
+                tabsByWindowID[tab.id, default: []].append(tab)
+            } else {
+                orphanTabs.append(tab)
+            }
+        }
+
+        var result: [WindowInfo] = []
+        result.reserveCapacity(list.count)
+        for win in sortedRegular {
+            result.append(win)
+            if let attached = tabsByWindowID[win.id] {
+                result.append(contentsOf: attached)
+            }
+        }
+        result.append(contentsOf: orphanTabs)
+        result.append(contentsOf: sortedDeferred)
+        return result
     }
 
     /// Sorts an application's windows by their true Accessibility z-order (front-to-back),

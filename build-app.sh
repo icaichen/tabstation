@@ -20,7 +20,7 @@ BUNDLE_ID="com.tabstation.TabStation"
 if [[ -f "$ROOT/VERSION" ]]; then
   VERSION="$(tr -d '[:space:]' < "$ROOT/VERSION")"
 else
-  VERSION="1.0.1"
+  VERSION="1.0.2"
 fi
 APP="$ROOT/dist/$APP_NAME.app"
 ENTITLEMENTS="$ROOT/Resources/AltDeck.entitlements"
@@ -45,7 +45,7 @@ swift_build() {
   if [[ "$UNIVERSAL" == "1" ]]; then
     arch_flags=(--arch arm64 --arch x86_64)
   fi
-  swift build --configuration "$CONFIG" "${arch_flags[@]}" --package-path "$ROOT" --scratch-path "$SCRATCH" "$@"
+  swift build --configuration "$CONFIG" ${arch_flags[@]+"${arch_flags[@]}"} --package-path "$ROOT" --scratch-path "$SCRATCH" "$@"
 }
 
 echo "==> Building ($CONFIG)…"

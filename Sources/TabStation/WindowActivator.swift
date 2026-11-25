@@ -142,7 +142,7 @@ enum WindowActivator {
     }
 
     static func activate(_ window: WindowInfo) {
-        MRUTracker.shared.recordFocus(windowID: window.id)
+        MRUTracker.shared.recordFocus(windowID: window.id, pid: window.pid)
         guard let app = NSRunningApplication(processIdentifier: window.pid), !app.isTerminated else { return }
 
         if let tab = window.browserTab {
